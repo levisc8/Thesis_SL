@@ -1,0 +1,17 @@
+---
+title: "Untitled"
+author: "Sam Levin"
+date: "September 14, 2017"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+data <- read.csv('../../Figures/Phylo_models_output.csv', stringsAsFactors = F)
+```
+
+
+```{r pressure, echo=FALSE}
+knitr::kable(data)
+```
+
