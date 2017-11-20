@@ -643,7 +643,7 @@ ggdraw() +
 # NMDS Plots for traits + phylogeny from best model ---------------
 demo.data <- arrange(demo.data, desc(ESCR2))
 
-traits <- c('Height', 'WoodDens', 'GrowthForm')
+traits <- c('Height', 'SLA', 'Tough', 'Flower.Period')
 par(mfrow = c(2,2))
 trait.data <- tyson$traits
 
@@ -798,7 +798,7 @@ ggdraw() +
   annotate('text', x = 0.075, y = 0.55,
            label = 'Adjusted R-Squared',
            angle = 90, size = 5) +
-  annotate('text', x = 0.225, y = 0.09,
+  annotate('text', x = 0.205, y = 0.09,
            label = 'Functional\n information \nonly') +
   annotate('text', x = 0.93, y = 0.09,
            label = 'Phylogenetic \ninformation \nonly') +
