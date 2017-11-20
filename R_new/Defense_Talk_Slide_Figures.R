@@ -44,8 +44,9 @@ KstraPlot <- ggplot(filter(forPlot, Species == 'Kummerowia_striata'),
                      limits = c(-0.5, 3.1)) + 
   annotate('text', x = 152.5, y = 2.9,
            label = 'Kummerowia striata',
-           size = 5)
-  
+           size = 5) +
+  geom_hline(yintercept = 0, linetype = 'dotted')
+
 KstraPlot
 
 LigPlot <- KstraPlot + 
@@ -58,3 +59,58 @@ LigPlot <- KstraPlot +
            size = 5) + 
   geom_hline(yintercept = 0, linetype = 'dotted')
 LigPlot
+
+# create color coded Tyson scale phylogeny figure
+library(ggtree)
+library(viridis)
+spp.list <- tyson$spp.list
+spp.list$Species <- gsub('\\.', '-', spp.list$Species)
+forPhylo <- filter(spp.list, Monocot == 0) %>% as_tibble()
+demo.data <- tyson$demo.data
+
+# add group labels. Will be important for color coding with ggtree
+forPhylo$PhyloGroup <- NA
+forPhylo$PhyloGroup <- ifelse(forPhylo$Exotic == 0, 'Native',
+                              ifelse(forPhylo$Invasive == 0, 'Exotic', 'Invasive'))
+
+forPhylo$PhyloGroup[forPhylo$Species %in% unique(demo.data$Species)] <- 'Focal_Species'
+forPhylo <- forPhylo[!duplicated(forPhylo$Species) & 
+                       forPhylo$Species %in% phylo$tip.label, ] # remove duplicated species 
+
+# create grouping list for plotting
+groups <- list(Natives = forPhylo$Species[forPhylo$PhyloGroup == 'Native'],
+               Exotics = forPhylo$Species[forPhylo$PhyloGroup == 'Exotic'],
+               Invasives = forPhylo$Species[forPhylo$PhyloGroup == 'Invasive'],
+               Focal.Species = forPhylo$Species[forPhylo$PhyloGroup == 'Focal_Species'])
+
+# add group variables to the phylogeny
+forPlotting <- groupOTU(phylo, groups)
+
+# select colors from plotting. the hexcode values come from a call to
+# viridis::viridis(4, alpha = 0.9, direction = -1) and removing the 3rd
+# (the contrast wasn't as good as I'd hoped).
+colors <- c("#FDE725E6", "#35B779E6", "red", "#440154E6")
+
+# Create the ggplot object and then annotate it with cowplot below
+Tree <- ggtree(forPlotting, layout = 'circular', 
+               aes(color = group)) + 
+  theme(legend.position = 'right') + 
+  scale_color_manual('',
+                     breaks = c('Natives',
+                                'Focal.Species',
+                                'Invasives',
+                                'Exotics'),
+                     labels = c('Native',
+                                'Focal Species',
+                                'Invasive',
+                                'Exotic/Non-Invasive'),
+                     values = colors)
+# Using cowplot so I can offset the title with it's really simple interface 
+ggdraw() + 
+  draw_plot(Tree, x = 0, y = 0, height = 1, width = 1) + 
+  annotate('text', x = .825, y = .65,  
+           label = 'Phylogeny of the \nTRC Species Pool',
+           size = 6)
+
+# Save the output and have a look!
+# ggsave('../Figures/TRC_Phylo.png', height = 8, width = 8, units = 'in')
