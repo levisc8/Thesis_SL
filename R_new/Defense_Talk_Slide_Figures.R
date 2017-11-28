@@ -114,3 +114,61 @@ ggdraw() +
 
 # Save the output and have a look!
 # ggsave('../Figures/TRC_Phylo.png', height = 8, width = 8, units = 'in')
+
+
+# Figures to demonstrate hypotheses------------
+# novelty and invasive class
+x <- runif(80, 0, 200) %>% sort() # MPD
+y <- c(rbinom(40, 1, 0.2), rbinom(40, 1, 0.8)) # Invasiveness
+
+positiveGLM <- glm(y ~ x, family = binomial())
+plot(y ~ x, type = 'n',
+     xlab = 'Novelty',
+     ylab = 'Invasive Status',
+     axes = FALSE,
+     cex.lab = 1.5)
+box(lwd = 1)
+lines(x, predict(positiveGLM, type = 'response'))
+
+y <- c(rbinom(40, 1, 0.8), rbinom(40, 1, 0.2)) # Invasiveness
+
+negativeGLM <- glm(y ~ x, family = binomial())
+plot(y ~ x, type = 'n',
+     xlab = 'Novelty',
+     ylab = 'Invasive Status',
+     axes = FALSE,
+     cex.lab = 1.5)
+box(lwd = 1)
+lines(x, predict(negativeGLM, type = 'response'))
+
+# Linear LRR Simulation
+x <- runif(14, 0, 240)
+y <- 5 + -.025 * x + rnorm(14, 0, 1.5) # phylogeny only. adding more error for demonstration purposes
+
+PhyloLM <- lm(y ~ x)
+plot(y ~ x, xlab = 'Novelty',
+     ylab = 'Effect Size of Competition',
+     axes = FALSE,
+     cex.lab = 1.5)
+box(lty = 1)
+abline(PhyloLM)
+
+y <- 5 + -0.025 * x + rnorm(14, 0, .5) # poorly conserved have smaller error
+poorLM <- lm(y ~ x)
+plot(y ~ x, xlab = 'Novelty',
+     ylab = 'Effect Size of Competition',
+     axes = FALSE,
+     cex.lab = 1.5)
+box(lty = 1)
+abline(poorLM)
+
+y <- 5 + -.025 * x + rnorm(14, 0, 1) # well conserved traits have medium amount of error
+goodLM <- lm(y ~ x)
+plot(y ~ x, xlab = 'Novelty',
+     ylab = 'Effect Size of Competition',
+     axes = FALSE,
+     cex.lab = 1.5)
+box(lty = 1)
+abline(goodLM)
+
+
