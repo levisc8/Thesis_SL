@@ -1,9 +1,7 @@
 # Compute phylogenetic signal for individual and whole suite of traits
 # I'll use Blomberg's K for continuous traits, D-test for binary traits 
 # (Fritz + Purvis 2010), and a 
-# phylogenetic Mantel Test for the whole suite (Hardy + Pavoine 2012). This script
-# is meant to be sourced from Final_Traits_Script.R, so many of the required
-# packages aren't listed here, but are called in that.
+# phylogenetic Mantel Test for the whole suite (Hardy + Pavoine 2012). 
 
 rm(list = ls(all = T))
 
@@ -35,16 +33,19 @@ WoodDens <- TraitData$WoodDens
 names(WoodDens) <- TraitData$Species.Name
 
 outData <- data.frame(Trait = c('SLA','Height','Leaf toughness','Stem density',
+                                'Flower Period',
                                 GrowthForm, Legume, DispersalTraitNames, 'All combined'),
-                      DataFormat = c(rep('Continuous',4), rep('Binary', 
-                                                              length(DispersalTraitNames) +
-                                                              length(GrowthForm) + 1),
+                      DataFormat = c(rep('Continuous',4), 'Circular',
+                                     rep('Binary', 
+                                         length(DispersalTraitNames) +
+                                           length(GrowthForm) + 1),
                                      'Gower Distance Matrix'),
                       Test = c(rep("Blomberg's K", 4),
-                                    rep('Phylogenetic D',
-                                    length(DispersalTraitNames) +
-                                      length(GrowthForm) + 1),
-                                    'Mantel Test'),
+                               'Mantel Test',
+                               rep('Phylogenetic D',
+                                   length(DispersalTraitNames) +
+                                     length(GrowthForm) + 1),
+                               'Mantel Test'),
                       N = NA,
                       Value = NA,
                       P_valB = NA,
@@ -79,7 +80,7 @@ binTraits <- TraitData[ ,c(1, 7,9:25)]
 
 TraitPhy$node.label <- 1:length(TraitPhy$node.label)
 
-source('SE_Phylo_D.R')
+source('R_new/SE_Phylo_D.R')
 
 for(i in names(binTraits)[-c(1)]){
  PhyD <- SE_phylo.d(binTraits, TraitPhy, "Species.Name", i)
@@ -90,16 +91,39 @@ for(i in names(binTraits)[-c(1)]){
 }
 
 
+
 # Next, i'll do a mantel test with the trait and phylogenetic distances
 # using square root of phylo distances per Hardy+Pavoine 2012
+# Additionally, I'm going to create a distance matrix for flower period
+# and try a Mantel test on that as well.
+
+Circ_to_DistMat <- function(x, y, M) {
+  out <- sqrt(1 - abs(1 - 2 * abs(x/M - y/M)))
+  return(out)
+}
+
+FlowerPeriod <- TraitData$Flower.Period
+names(FlowerPeriod) <- TraitData$Species.Name
+
+FlowerPeriodDist <- outer(FlowerPeriod, 
+                          FlowerPeriod,
+                          FUN = Circ_to_DistMat,
+                          M = 12)
+
+names(FlowerPeriodDist) <- rownames(FlowerPeriodDist)
+
 regTraitDist <- make_regional_trait_dist(TraitData,
                                          names(TraitData)[-c(1,5)]) %>%
                 as.matrix()
-traitPhyDists <- cophenetic(TraitPhy)
+traitPhyDists <- cophenetic(TraitPhy) %>% sqrt
 
 regTraitDist <- regTraitDist[rownames(regTraitDist) %in% rownames(traitPhyDists),
                              colnames(regTraitDist) %in% colnames(traitPhyDists)] %>%
                 .[rownames(traitPhyDists), colnames(traitPhyDists)]
+
+FlowerPeriodDist <- FlowerPeriodDist[rownames(FlowerPeriodDist) %in% rownames(traitPhyDists),
+                             colnames(FlowerPeriodDist) %in% colnames(traitPhyDists)] %>%
+  .[rownames(traitPhyDists), colnames(traitPhyDists)]
 
 if(identical(rownames(regTraitDist), rownames(traitPhyDists)) &
    identical(colnames(regTraitDist), colnames(traitPhyDists))){
@@ -109,6 +133,16 @@ if(identical(rownames(regTraitDist), rownames(traitPhyDists)) &
   outData[outData$Trait == 'All combined', 'P_valB'] <- allResult$signif
   outData[outData$Trait == 'All combined', 'N'] <- dim(traitPhyDists)[1]
 }
+
+if(identical(rownames(FlowerPeriodDist), rownames(traitPhyDists)) &
+   identical(colnames(FlowerPeriodDist), colnames(traitPhyDists))){
+  
+  allResult <- mantel(traitPhyDists, FlowerPeriodDist)
+  outData[outData$Trait == 'Flower Period', 'Value'] <- allResult$statistic
+  outData[outData$Trait == 'Flower Period', 'P_valB'] <- allResult$signif
+  outData[outData$Trait == 'Flower Period', 'N'] <- dim(FlowerPeriodDist)[1]
+}
+
 
 outData$Value <- round(outData$Value, 4)
 
@@ -131,5 +165,5 @@ add_stars <- function(x){
 outData$P_valB <- sapply(outData$P_valB, FUN = function(x) add_stars(x))
 outData$P_valR <- sapply(outData$P_valR, FUN = function(x) add_stars(x))
 
-write.csv(outData, '../../Figures/Phylo_Signal_in_Functional_Traits.csv', na = "",
+write.csv(outData, '../Figures/Phylo_Signal_in_Functional_Traits.csv', na = "",
            row.names = F)
