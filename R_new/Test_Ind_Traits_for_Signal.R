@@ -165,5 +165,5 @@ add_stars <- function(x){
 outData$P_valB <- sapply(outData$P_valB, FUN = function(x) add_stars(x))
 outData$P_valR <- sapply(outData$P_valR, FUN = function(x) add_stars(x))
 
-write.csv(outData, '../Figures/Phylo_Signal_in_Functional_Traits.csv', na = "",
-           row.names = F)
+# write.csv(outData, '../Figures/Phylo_Signal_in_Functional_Traits.csv', na = "",
+#            row.names = F)

@@ -5,6 +5,7 @@
 rm(list = ls(all = T))
 library(FunPhylo)
 library(pez)
+library(lme4)
 library(dplyr)
 library(ggplot2)
 library(ggthemes)
@@ -237,6 +238,45 @@ LocalNNDInvGLM <- glm(Invasive ~ NND.Local, family = binomial(),
 message('Local Scale Regional Style Analysis')
 summary(LocalMPDInvGLM)
 summary(LocalNNDInvGLM)
+
+# Per Ingolf Kuehn's suggestion, trying a different approach to modeling
+# the scale dependence of phylogenetic patterns and invasive classification.
+# Basically, it's a mixed effects model with novelty metric and scale
+# as interaction terms. If the interaction term is significant, then
+# the relationship is scale dependent. If not, then differences
+# in patterns aren't really changing with scale. Species is included
+# as a random term to account for species that have measurements at local
+# and regional spatial scales, as well as species that have multiple
+# measurements at the local spatial scale. 
+exotics$Scale <- 'Regional'
+All.Local.exotics$Scale <- 'Local'
+
+# prepare regional data
+exoticsForJoin <- exotics %>%
+  select(Species,Exotic, Invasive,
+         MPD, NND, Focal, Scale)
+
+# prepare local data and join with regional
+allExotics <- All.Local.exotics %>%
+  select(community, alien, Invasive, MPD.Local, 
+         NND.Local, Focal, Scale) %>%
+  setNames(c('Species', 'Exotic', 'Invasive',
+           'MPD', 'NND', 'Focal', 'Scale')) %>%
+  rbind(exoticsForJoin)
+
+# Fit the models!
+ScaleRegMPD <- glmer(Invasive ~ MPD * Scale + (1|Species),
+                     data = allExotics, 
+                     family = binomial)
+
+ScaleRegNND <- glmer(Invasive ~ NND * Scale + (1|Species),
+                     data = allExotics, 
+                     family = binomial)
+# summaries
+message('Mixed effects models for patterns\n')
+summary(ScaleRegMPD)
+summary(ScaleRegNND)
+
 
 local.nnd.plt <- ggplot(data = Local.Ex.For.Reg,
                         aes(x = NND.Local, y = Invasive)) +
