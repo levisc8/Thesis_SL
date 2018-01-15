@@ -437,4 +437,28 @@ ggdraw() +
            size = 3.5) +
   annotate('point', x = .013, y = .95, color = 'red', alpha = 0.4)
 
+# Test traits for ESCR ~ Trait relationship
+trait.demo.data <- tyson$traits %>%
+  setNames(c('Species', names(tyson$traits)[-1])) %>%
+  filter(Species %in% demo.data$Species) %>%
+  left_join(., demo.data, by = 'Species')
 
+SLA.LM <- lm(ESCR2 ~ SLA*Habitat + CRBM, data = trait.demo.data)
+summary(SLA.LM)
+
+HT.LM <- lm(ESCR2 ~ Height*Habitat + CRBM, data = trait.demo.data)
+summary(HT.LM)
+
+Tough.LM <- lm(ESCR2 ~ Tough + CRBM, data = trait.demo.data)
+summary(Tough.LM)
+# Omit columns for which we only have a couple or have no observations
+binary.columns <- c('Woody', 'Clonal', 'N_Fixer',
+                    'Stemmed_Herb', 'Tree', 'Rosette',
+                    'Shrub', 'Unassisted', 'Ballistic',
+                    'EndoZoochory', 'Water')
+
+for(i in unique(binary.columns)){
+  message(paste0('\nAnova Results for trait:', i))
+  Anova <- aov(trait.demo.data$ESCR2 ~ trait.demo.data[ ,i])
+  print(summary(Anova))
+}
