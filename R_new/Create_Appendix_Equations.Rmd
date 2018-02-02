@@ -8,6 +8,25 @@ output:
 ---
 
 
+### Ailanthus altissima
+
+$$
+n(y, t+1) = vgf_{d}(y)B(t) + \int_L^U [p(y,x) + vgf(y,x) + c(y,x)]n(x,t) \mathrm{d}x  \tag{1}
+$$
+$$
+p(y, x) = s(x)g(y, x) \tag{2}\\
+$$
+
+$$
+f(y, x) = f_{r}(x)f_{n}(x)f_{d}(y) \tag{3}
+$$
+$$
+c(y,x) = c_{d}(y)h_{n}(x) \tag{4}
+$$
+$$
+B(t+1) = v(1-g)B(T) + v(1-g) \int_L^U[f_{d}(x)f_{n}(x)]n(x,t) \mathrm{d}x \tag{5}
+$$
+
 ### Alliaria petiolata
 
 $$\begin{bmatrix}
@@ -37,6 +56,12 @@ $$\begin{bmatrix}
     v_{1} * G &  s * f * v_{0} * G
   \end{bmatrix}$$
 
+### Euonymus alatus
+
+$$
+n(y, t + 1) = \dots
+$$
+
 ### Kummerowia striata
 
 $$\begin{bmatrix}
@@ -62,6 +87,13 @@ $$\begin{bmatrix}
     0 & 0 & 0 & S_{S} * P_{MS} & S_{M} * C_{MM} & S_{L} * R_{ML} \\
     0 & 0 & 0 & 0 & S_{M} * P_{LM} & S_{L} * C_{LL}
 \end{bmatrix}$$
+
+
+### Ligustrum obtusifolium
+
+$$ 
+n(y, t + 1)
+$$
 
 ### Perilla frutescens
 
