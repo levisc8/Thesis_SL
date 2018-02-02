@@ -1,0 +1,94 @@
+---
+title: "Matrices and Equations for Appendix"
+author: "Sam Levin"
+date: "February 2, 2018"
+output: 
+  word_document: default
+  html_document: default
+---
+
+
+### Alliaria petiolata
+
+$$\begin{bmatrix}
+    1 - G_{2} & 0 & F * V * (1 - G_{1}) \\
+    G_{2} & 0 & F * v * G_{1} \\
+    0 & S & 0
+    \end{bmatrix}$$
+    
+    
+### Carduus nutans
+
+$$\begin{bmatrix}
+    S_{b} & 0 & F * e \\
+    g_{b} & 0 & F * g_{i} \\
+    0 & s_{j} & 0
+    \end{bmatrix}$$ 
+    
+    
+### Draba verna
+
+$$\begin{bmatrix}
+    0 & v_{3} * (1 - G) & 0 & 0 & 0 \\
+    0 & 0 & v_{2} * (1-G) & 0 & 0 \\
+    0 & 0 & 0 & v_{1} * (1- G) & 0 \\
+    0 & 0 & 0 & 0 & s * f * v_{0} * (1-G) \\ 
+    v_{4} * G & v_{3} * G & v_{2} * G &
+    v_{1} * G &  s * f * v_{0} * G
+  \end{bmatrix}$$
+
+### Kummerowia striata
+
+$$\begin{bmatrix}
+    0 & 0 & f * v * G_{2} \\
+    1 & 0 & f * v * G_{1} \\
+    0 & 1 & s * f * v * G_{0}
+\end{bmatrix}$$
+
+
+### Lepidium campestre
+
+$$\begin{bmatrix}
+    s * f * g 
+\end{bmatrix}$$
+
+### Lespedeza cuneata
+
+$$\begin{bmatrix}
+    0 & 0 & 0 & F_{S} * (1-g) * v & F_{M} * (1-g) * v & F_{L} * (1-g) * v \\
+    g * v & 0 & 0 & F_{S} * g * v & F_{M} * g * v & F_{L} * g * v \\
+    0 & P_{Sdl1} * S_{Sdl} & 0 & 0 & 0 & 0 \\
+    0 & P2_{Sdl1} * S_{Sdl} & P_{Sdl2} * S_{Sdl2} & S_{S} * C_{SS} & S_{M} * R_{SM} & 0 \\
+    0 & 0 & 0 & S_{S} * P_{MS} & S_{M} * C_{MM} & S_{L} * R_{ML} \\
+    0 & 0 & 0 & 0 & S_{M} * P_{LM} & S_{L} * C_{LL}
+\end{bmatrix}$$
+
+### Perilla frutescens
+
+$$\begin{bmatrix} s * f * g  \end{bmatrix}$$
+
+### Potentilla recta
+
+$$\begin{bmatrix}
+    s_{b} & 0 & 0 & f * v * (1-g_{i}) \\
+    g_{b} & 0 & 0 & f * v * g_{i} \\
+    0 & s_{1a} * s_{1b} * (1-p_{1}) & s_{2} * (1-p_{2}) & s_{3} * (1-p_{3}) \\
+    0 & s_{1a} * s_{1b} * p_{1} & s_{2} * p_{2} & s_{3} * p_{3}
+\end{bmatrix}$$
+
+### Thlaspi perfoliatum
+
+$$\begin{bmatrix} 
+    a_{1} & s * f * v * (1-g)\\
+    a_{2} & s * f * v * g
+\end{bmatrix}$$
+
+
+### Verbascum thapsus
+
+$$\begin{bmatrix}
+    s_{b} * (1-g_{b}) & 0 & f * v * (1-g_{i}) \\
+    s_{b} * g_{b} & 0 & f * v * g_{i} \\
+    0 & s_{j} & 0
+\end{bmatrix}$$
+
