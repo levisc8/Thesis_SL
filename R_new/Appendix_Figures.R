@@ -14,8 +14,10 @@ demo.data <- tyson$demo.data
 phylo <- tyson$phylo
 
 Richness <- communities %>% group_by(exotic_species) %>%
-            summarise(Richness = n()) %>% filter(exotic_species %in% demo.data$Species) %>%
-            cbind(demo.data, .)
+            summarise(Richness = n()) %>% 
+  filter(exotic_species %in% demo.data$Species) %>%
+  cbind(demo.data, .)
+
 Richness$Focal.Abundance <- NA
 Richness$Other.Abundance <- NA
 Richness$NN.Abundance <- NA
@@ -23,20 +25,26 @@ Richness$NN.Abundance <- NA
 for(x in unique(Richness$Species)){
   focal.abund <- communities[communities$exotic_species == x &
                                communities$community == x, 'percentcover']
+  
   other.abund <- filter(communities, exotic_species == x & 
                           community != x) %>%
     select(percentcover) %>% sum(na.rm = TRUE)
+
   com <- filter(communities, exotic_species == x & 
                  !is.na(percentcover)) %>% select(community) %>%
     unlist()
   
-  phy <- drop.tip(phylo, setdiff(phylo$tip.label, com)) %>% cophenetic() %>%
-  data.frame()
+  phy <- drop.tip(phylo, setdiff(phylo$tip.label, com)) %>%
+    cophenetic() %>%
+    data.frame()
   
   diag(phy) <- NA
-  nn <- which.min(phy[ ,x]) %>% rownames(phy)[.]
+  nn <- which.min(phy[ ,x]) %>% 
+    rownames(phy)[.]
+  
   NN.abund <- filter(communities, exotic_species == x &
-                       community == nn) %>% select(percentcover) %>%
+                       community == nn) %>% 
+    select(percentcover) %>%
     unlist()
   
     
@@ -55,40 +63,74 @@ for(x in unique(Richness$Species)){
 RichLM <- lm(ESCR2 ~ Richness, data = Richness)
 summary(RichLM)
 
+def_plot <- theme(plot.background = element_rect(fill = NA),
+                  panel.background = element_rect(fill = NA),
+                  axis.line = element_line(size = 1.25),
+                  axis.text = element_text(size = 14),
+                  axis.title = element_text(size = 16),
+                  plot.margin = margin(20, 20, 20, 20),
+                  legend.title = element_text(size = 16),
+                  legend.text = element_text(size = 14),
+                  legend.key = element_rect(fill = NA))
+
 plt <- ggplot(Richness, aes(x = Richness, y = ESCR2)) + 
-  theme_tufte() +
-  geom_rangeframe() + 
-  geom_point(aes(color = Habitat)) + 
+  def_plot +
+  geom_point(aes(color = Habitat),
+             size = 3.5,
+             alpha = 0.7) + 
   ylab('Effect Size of Competition') +
   xlab('Site-level Species Richness')+
   scale_color_manual(values = c('black','orange','green'))
-# plt
+plt
+
+ggsave('ESCR_by_Richness_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
 
 RichCRBM <- lm(CRBM ~ Richness, data = Richness)
 summary(RichCRBM)
 
 plt2 <- ggplot(Richness, aes(x = Richness, y = CRBM)) + 
-  theme_tufte() +
-  geom_rangeframe() + 
-  geom_point(aes(color = Habitat)) + 
+  def_plot +  
+  geom_point(aes(color = Habitat),
+             size = 3.5,
+             alpha = 0.7) + 
   ylab('Standardized Competitor Biomass Removed') +
   xlab('Site-level Species Richness') +
   scale_color_manual(values = c('black','orange','green')) +
-  stat_smooth(method = 'lm', se = F)
-# plt2
+  stat_smooth(method = 'lm', se = FALSE)
+plt2
+
+ggsave('CRBM_by_Richness_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
 
 RichAbund <- lm(Richness ~ Focal.Abundance, data = Richness)
 summary(RichAbund)
 
 plt3 <- ggplot(Richness, aes(x = Focal.Abundance, y = Richness)) +
-  theme_tufte() + 
-  geom_rangeframe() +
-  geom_point(aes(color = Habitat)) + 
+  def_plot + 
+  geom_point(aes(color = Habitat),
+             size = 3.5,
+             alpha = 0.7) + 
   ylab('Site-level Species Richness') +
   xlab('Abundance of Focal Species') +
   scale_color_manual(values = c('black','orange','green')) 
 
-# plt3
+plt3
+
+ggsave('Richness_Focal_Abundance_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
 
 AbundLM <- lm(Richness$Other.Abundance ~ log(Richness$Focal.Abundance))
 summary(AbundLM)
@@ -107,22 +149,31 @@ summary(AbundLM)
 
 plt5 <- plt4 <- ggplot(Richness, aes(y = NN.Abundance,
                                      x = ESCR2)) +
-  theme_tufte() + 
-  geom_rangeframe() +
-  geom_point(aes(color = Habitat)) + 
+  def_plot + 
+  geom_point(aes(color = Habitat),
+             size = 3,
+             alpha = 0.7) + 
   xlab('Effect size of Competitor Removal') +
   ylab('Abundance of Phylogenetic Nearest Neighbor') +
-  scale_color_manual(values = c('black','orange','green')) +
-  stat_smooth(method = 'lm', se = F)
+  scale_color_manual(values = c('black','orange','green')) 
 
 plt5
+
+ggsave('NN_Abundance_ESCR_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
+
 
 outTable <- select(Richness, -c(exotic_species, Other.Abundance))
 
 outTable$CRBM <- exp(outTable$CRBM)
 outTable$Species <- gsub("_", " ", outTable$Species)
 
-# write.csv(outTable, '../Figures/Abundance_Richness_Table.csv')
+write.csv(outTable,
+          '../Eco_Letters_Manuscript/Figures/Abundance_Richness_Table.csv')
 
 # different tests of ESCR~Biomass ------------
 
@@ -136,6 +187,7 @@ for(x in unique(demo.data$Species)){
   demo.data$RawCRBM[demo.data$Species == x] <- Means[Means$Site2 == y,
                                                      'FirstCut'] 
 }
+
 demo.data$RawCRBM <- unlist(demo.data$RawCRBM)
 # get phylogeny and communities ready
 phylo <- tyson$phylo
@@ -261,9 +313,10 @@ demo.data$MEPPInv <- ifelse(demo.data$MEPPInv == 1,
                             "Exotic")
 # Plot ESCR2 ~ RawCRBM
 Fig6 <- ggplot(demo.data, aes(x = RawCRBM, y = ESCR2)) +
-  theme_tufte() + 
-  geom_rangeframe() +
-  geom_point(aes(color = MEPPInv), alpha = 0.4) +
+  def_plot + 
+  geom_point(aes(color = MEPPInv),
+             size = 3,
+             alpha = 0.4) +
   scale_color_manual('',
                      breaks = c('Invasive', 'Exotic'),
                      values = c('red','blue')) +
@@ -277,10 +330,10 @@ Fig6 <- ggplot(demo.data, aes(x = RawCRBM, y = ESCR2)) +
 
 Fig6
 
-# RESUME 11/2/17
 # Make Figures S3.6 (resids(lm(ESCR2~CRBM)) ~ novelty) and
 # S3.7 (ESCR2 ~ novelty, no biomass)
 bad.mets <- c('AWMPD', 'AWNND')
+library(tidyr)
 
 forPlot <- gather(demo.data, Metric, Magnitude, MPD:logAWNND) %>% 
   filter(!Metric %in% bad.mets )
@@ -402,6 +455,7 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
   scale_color_manual(values = c('red','blue')) 
 # create blank canvas and get to drawing!
 
+library(cowplot)
 ggdraw() +
   draw_plot(loc.lrr.mpd.plt, x = .1, y = .67,
             width = .45, height = .33) + 
@@ -437,6 +491,13 @@ ggdraw() +
            size = 3.5) +
   annotate('point', x = .013, y = .95, color = 'red', alpha = 0.4)
 
+ggsave('Residuals_by_Novelty_LRR_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 8.5,
+       width = 12.5,
+       units = 'in',
+       dpi = 600)
+
 # Test traits for ESCR ~ Trait relationship
 trait.demo.data <- tyson$traits %>%
   setNames(c('Species', names(tyson$traits)[-1])) %>%
@@ -458,7 +519,7 @@ binary.columns <- c('Woody', 'Clonal', 'N_Fixer',
                     'EndoZoochory', 'Water')
 
 for(i in unique(binary.columns)){
-  message(paste0('\nAnova Results for trait:', i))
-  Anova <- aov(trait.demo.data$ESCR2 ~ trait.demo.data[ ,i])
+  message(paste0('\nAnova Results for trait: ', i))
+  Anova <- aov(trait.demo.data$ESCR2 ~ unlist(trait.demo.data[ ,i]))
   print(summary(Anova))
 }
