@@ -6,6 +6,7 @@ library(FunPhylo)
 library(pez)
 library(lme4)
 library(dplyr)
+library(purrr)
 library(ggplot2)
 library(ggthemes)
 library(cowplot)
@@ -269,157 +270,159 @@ NndPred <- augment(FullScaleRegNNDRescale) %>%
   mutate(Focal = ifelse(Species %in% demo.data$Species, "Y", "N"))
 
 
-# Plot the data
-
-plt.blank <- theme(panel.grid.major = element_blank(),
-                   panel.grid.minor = element_blank(),
-                   panel.background = element_rect(fill = NA,
-                                                   size = 1.25,
-                                                   color = 'black'),
-                   axis.title = element_text(size = 18),
-                   axis.line = element_line(size = 1.3),
-                   axis.text = element_text(size = 16))
-
-regional.nnd.plt <- ggplot(data = exotics,
-                           aes(x = NND,
-                               y = Invasive)) +
-  geom_jitter(aes(color = Focal), 
-              alpha = 0.4,
-              width = 0, 
-              height = 0.075,
-              show.legend = FALSE,
-              size = 5) + 
-  scale_color_manual(values = c('blue', 'red')) +
-  xlab('') +
-  scale_y_continuous('',
-                     breaks = seq(0, 1, 1),
-                     limits = c(-0.15, 1.25)) +
-  scale_x_continuous('', 
-                     breaks = seq(0, max(exotics$NND, na.rm = TRUE), 40),
-                     limits = c(0, max(exotics$NND, na.rm = TRUE) + 5)) +
-  plt.blank +
-  annotate('text', x = 177,
-           y = 1.2,
-           label = 'A',
-           size = 8)
-
-regional.mpd.plt <- ggplot(data = exotics,
-                           aes(x = MPD,
-                               y = Invasive)) +
-  geom_jitter(aes(color = Focal),
-              alpha = 0.4,
-              width = 0,
-              height = 0.075,
-              show.legend = FALSE,
-              size = 5) + 
-  scale_color_manual(values = c('blue', 'red')) +
-  xlab('') +
-  scale_y_continuous('',
-                     breaks = seq(0, 1, 1),
-                     limits = c(-0.15, 1.25)) +
-  scale_x_continuous('', 
-                     breaks = seq(200, 280, 20),
-                     limits = c(200,
-                                max(exotics$MPD, 
-                                    na.rm = TRUE) + 5)) +
-  plt.blank +
-  annotate('text',
-           x = 280, 
-           y = 1.2,
-           label = 'B',
-           size = 8)
-
-
-local.nnd.plt <- ggplot(data = All.Local.exotics,
-                        aes(x = NND.Local,
-                            y = Invasive)) +
-  geom_jitter(aes(color = Focal), 
-              alpha = 0.4,
-              width = 0,
-              height = 0.075,
-              show.legend = FALSE,
-              size = 5) + 
-  scale_color_manual(values = c('blue', 'red')) +
-  xlab('Nearest Neighbor Distance') +
-  scale_y_continuous('',
-                     breaks = seq(0, 1, 1),
-                     limits = c(-0.15, 1.15)) +
-  scale_x_continuous('Nearest Neighbor Distance', 
-                     breaks = seq(0, max(All.Local.exotics$NND.Local), 60),
-                     limits = c(0, max(All.Local.exotics$NND.Local))) +
-  plt.blank +
-  annotate('text',
-           x = 240, 
-           y = 1.15, 
-           label = 'C',
-           size = 8)
-
-local.mpd.plt <- ggplot(data = All.Local.exotics,
-                        aes(x = MPD.Local, 
-                            y = Invasive)) +
-  geom_jitter(aes(color = Focal), 
-              alpha = 0.4,
-              width = 0, 
-              height = 0.075,
-              show.legend = FALSE,
-              size = 5) + 
-  scale_color_manual(values = c('blue', 'red')) +
-  xlab('Nearest Neighbor Distance') +
-  scale_y_continuous('',
-                     breaks = seq(0, 1, 1),
-                     limits = c(-0.15, 1.15)) +
-  scale_x_continuous('Mean Pairwise Distance', 
-                     breaks = seq(140, 280, 40),
-                     limits = c(min(All.Local.exotics$MPD.Local),
-                                max(All.Local.exotics$MPD.Local))) +
-  plt.blank +
-  annotate('text', x = 275, y = 1.15, label = 'D',
-           size = 8)
-
-ggdraw() +
-  draw_plot(regional.nnd.plt, x = .1, y = .5, 
-            height = .45, width = .45) +
-  draw_plot(regional.mpd.plt, x = .55, y = .5,
-            height = .45, width = .45) + 
-  draw_plot(local.nnd.plt, x = .1, y = 0.05,
-            height = .45, width = .45) +
-  draw_plot(local.mpd.plt,
-            x = .55, y = 0.05,
-            height = .45, width = .45) + 
-  annotate('text', x = .1, y = .05, 
-           label = 'Local Scale',
-           size = 6) +
-  annotate('text', x = .1, y = .981, 
-           label = 'Regional Scale',
-           size = 6) + 
-  annotate('text', x = .08, y = .575, 
-           label = 'Focal Species', 
-           size = 6) +
-  annotate('text', x = .055, y = .522, 
-           label = 'Yes',
-           size = 6) + 
-  annotate('point', x = .025, y = .522, 
-           color = 'red', alpha = .2, size = 5) + 
-  annotate('text', x = .055, y = .492, 
-           label = 'No',
-           size = 6) + 
-  annotate('point', x = .025, y = .492, 
-           color = 'blue', alpha = .2, size = 5) +
-  annotate('text', x = .09, y = .8875,
-           label = 'Invasive', size = 6) +
-  annotate('text', x = .1, y = .63, 
-           label = 'Exotic', size = 6) +
-  annotate('text', x = .09, y = .4355, 
-           label = 'Invasive', size = 6) +
-  annotate('text', x = .1, y = .178,
-           label = 'Exotic', size = 6)
-
-ggsave(filename = 'Inv_Classification_For_Manuscript.png',
-       path = '../Eco_Letters_Manuscript/Figures',
-       height = 8,
-       width = 11,
-       units = 'in',
-       dpi = 600)
+# Plot the data - I am tentatively removing these from the manuscript. I don't
+# think they are helpful for understanding the results and plotting fitted lines
+# for any of them is a total pain
+# 
+# plt.blank <- theme(panel.grid.major = element_blank(),
+#                    panel.grid.minor = element_blank(),
+#                    panel.background = element_rect(fill = NA,
+#                                                    size = 1.25,
+#                                                    color = 'black'),
+#                    axis.title = element_text(size = 18),
+#                    axis.line = element_line(size = 1.3),
+#                    axis.text = element_text(size = 16))
+# 
+# regional.nnd.plt <- ggplot(data = exotics,
+#                            aes(x = NND,
+#                                y = Invasive)) +
+#   geom_jitter(aes(color = Focal), 
+#               alpha = 0.4,
+#               width = 0, 
+#               height = 0.075,
+#               show.legend = FALSE,
+#               size = 5) + 
+#   scale_color_manual(values = c('blue', 'red')) +
+#   xlab('') +
+#   scale_y_continuous('',
+#                      breaks = seq(0, 1, 1),
+#                      limits = c(-0.15, 1.25)) +
+#   scale_x_continuous('', 
+#                      breaks = seq(0, max(exotics$NND, na.rm = TRUE), 40),
+#                      limits = c(0, max(exotics$NND, na.rm = TRUE) + 5)) +
+#   plt.blank +
+#   annotate('text', x = 177,
+#            y = 1.2,
+#            label = 'A',
+#            size = 8)
+# 
+# regional.mpd.plt <- ggplot(data = exotics,
+#                            aes(x = MPD,
+#                                y = Invasive)) +
+#   geom_jitter(aes(color = Focal),
+#               alpha = 0.4,
+#               width = 0,
+#               height = 0.075,
+#               show.legend = FALSE,
+#               size = 5) + 
+#   scale_color_manual(values = c('blue', 'red')) +
+#   xlab('') +
+#   scale_y_continuous('',
+#                      breaks = seq(0, 1, 1),
+#                      limits = c(-0.15, 1.25)) +
+#   scale_x_continuous('', 
+#                      breaks = seq(200, 280, 20),
+#                      limits = c(200,
+#                                 max(exotics$MPD, 
+#                                     na.rm = TRUE) + 5)) +
+#   plt.blank +
+#   annotate('text',
+#            x = 280, 
+#            y = 1.2,
+#            label = 'B',
+#            size = 8)
+# 
+# 
+# local.nnd.plt <- ggplot(data = All.Local.exotics,
+#                         aes(x = NND.Local,
+#                             y = Invasive)) +
+#   geom_jitter(aes(color = Focal), 
+#               alpha = 0.4,
+#               width = 0,
+#               height = 0.075,
+#               show.legend = FALSE,
+#               size = 5) + 
+#   scale_color_manual(values = c('blue', 'red')) +
+#   xlab('Nearest Neighbor Distance') +
+#   scale_y_continuous('',
+#                      breaks = seq(0, 1, 1),
+#                      limits = c(-0.15, 1.15)) +
+#   scale_x_continuous('Nearest Neighbor Distance', 
+#                      breaks = seq(0, max(All.Local.exotics$NND.Local), 60),
+#                      limits = c(0, max(All.Local.exotics$NND.Local))) +
+#   plt.blank +
+#   annotate('text',
+#            x = 240, 
+#            y = 1.15, 
+#            label = 'C',
+#            size = 8)
+# 
+# local.mpd.plt <- ggplot(data = All.Local.exotics,
+#                         aes(x = MPD.Local, 
+#                             y = Invasive)) +
+#   geom_jitter(aes(color = Focal), 
+#               alpha = 0.4,
+#               width = 0, 
+#               height = 0.075,
+#               show.legend = FALSE,
+#               size = 5) + 
+#   scale_color_manual(values = c('blue', 'red')) +
+#   xlab('Nearest Neighbor Distance') +
+#   scale_y_continuous('',
+#                      breaks = seq(0, 1, 1),
+#                      limits = c(-0.15, 1.15)) +
+#   scale_x_continuous('Mean Pairwise Distance', 
+#                      breaks = seq(140, 280, 40),
+#                      limits = c(min(All.Local.exotics$MPD.Local),
+#                                 max(All.Local.exotics$MPD.Local))) +
+#   plt.blank +
+#   annotate('text', x = 275, y = 1.15, label = 'D',
+#            size = 8)
+# 
+# ggdraw() +
+#   draw_plot(regional.nnd.plt, x = .1, y = .5, 
+#             height = .45, width = .45) +
+#   draw_plot(regional.mpd.plt, x = .55, y = .5,
+#             height = .45, width = .45) + 
+#   draw_plot(local.nnd.plt, x = .1, y = 0.05,
+#             height = .45, width = .45) +
+#   draw_plot(local.mpd.plt,
+#             x = .55, y = 0.05,
+#             height = .45, width = .45) + 
+#   annotate('text', x = .1, y = .05, 
+#            label = 'Local Scale',
+#            size = 6) +
+#   annotate('text', x = .1, y = .981, 
+#            label = 'Regional Scale',
+#            size = 6) + 
+#   annotate('text', x = .08, y = .575, 
+#            label = 'Focal Species', 
+#            size = 6) +
+#   annotate('text', x = .055, y = .522, 
+#            label = 'Yes',
+#            size = 6) + 
+#   annotate('point', x = .025, y = .522, 
+#            color = 'red', alpha = .2, size = 5) + 
+#   annotate('text', x = .055, y = .492, 
+#            label = 'No',
+#            size = 6) + 
+#   annotate('point', x = .025, y = .492, 
+#            color = 'blue', alpha = .2, size = 5) +
+#   annotate('text', x = .09, y = .8875,
+#            label = 'Invasive', size = 6) +
+#   annotate('text', x = .1, y = .63, 
+#            label = 'Exotic', size = 6) +
+#   annotate('text', x = .09, y = .4355, 
+#            label = 'Invasive', size = 6) +
+#   annotate('text', x = .1, y = .178,
+#            label = 'Exotic', size = 6)
+# 
+# ggsave(filename = 'Inv_Classification_For_Manuscript.png',
+#        path = '../Eco_Letters_Manuscript/Figures',
+#        height = 8,
+#        width = 11,
+#        units = 'in',
+#        dpi = 600)
 
 # local ESCR regressions-------------
 mpdLM <- lm(ESCR2 ~ MPD + CRBM, data = demo.data)
@@ -474,7 +477,10 @@ modelTable$Parameter <- stringr::str_replace_all(modelTable$Parameter,
 
 modelTable[ ,5:9] <- round(modelTable[ ,5:9], 4)
 
-add_stars <- function(x){
+add_stars <- function(x) {
+  
+  if(is.na(x)) return(NA_character_)
+    
   if(x < .001){
     x <- paste0(x, "***")
   } else if(x < .01 & x > .001){
@@ -508,8 +514,17 @@ logisticModelTable <- data.frame(ModelType = c(rep('Nearest Neighbor Distance', 
                                                rep('Mean Pairwise Distance', 3)),
                                  rbind(tidy(FullScaleRegNNDRescale),
                                        tidy(NullScaleRegMPDRescale))) %>%
+  map_if(is.numeric, ~round(.x, 4)) %>%
+  data.frame() %>%
   setNames(c('Model Type', 'Parameter', 'Estimate', 'Std. Error', 'Statistic',
-             'p-value', 'Group'))
+             'p-value', 'Group')) 
+
+
+logisticModelTable$`p-value` <- lapply(logisticModelTable$`p-value`,
+                                       FUN = function (x) add_stars(x)) %>%
+  unlist()
+
+
 write.csv(logisticModelTable,
           file = '../Eco_Letters_Manuscript/Figures/Logistic_regression_outputs.csv',
           na = "", row.names = FALSE)
@@ -519,9 +534,16 @@ AppendixModelTable <- data.frame(ModelType = c(rep('Nearest Neighbor Distance', 
                                  rbind(tidy(NullScaleRegNNDRescale),
                                        tidy(MidScaleRegNNDRescale_2),
                                        tidy(MidScaleRegMPDRescale),
-                                       tidy(FullScaleRegMPDRescale))) %>%
+                                       tidy(FullScaleRegMPDRescale)))%>%
+  map_if(is.numeric, ~round(.x, 4)) %>%
+  data.frame() %>%
   setNames(c('Model Type', 'Parameter', 'Estimate', 'Std. Error', 'Statistic',
-             'p-value', 'Group'))
+             'p-value', 'Group')) 
+
+
+AppendixModelTable$`p-value` <- lapply(AppendixModelTable$`p-value`,
+                                       FUN = function (x) add_stars(x)) %>%
+  unlist()
 
 write.csv(AppendixModelTable,
           file = '../Eco_Letters_Manuscript/Figures/All_logistic_regression_outputs_for_Appendix.csv',
@@ -957,9 +979,11 @@ ggdraw() +
            label = 'Adjusted R-Squared',
            angle = 90, size = 5) +
   annotate('text', x = 0.205, y = 0.09,
-           label = 'Functional\n information \nonly') +
+           label = 'Functional\n information \nonly',
+           size = 5) +
   annotate('text', x = 0.93, y = 0.09,
-           label = 'Phylogenetic \ninformation \nonly') +
+           label = 'Phylogenetic \ninformation \nonly',
+           size = 5) +
   annotate('text', x = 0.56, y = .11,
            label = 'Phylogenetic Scaling Parameter',
            size = 5) + 

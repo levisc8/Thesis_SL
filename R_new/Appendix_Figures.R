@@ -132,23 +132,33 @@ ggsave('Richness_Focal_Abundance_Appendix.png',
        units = 'in',
        dpi = 600)
 
-AbundLM <- lm(Richness$Other.Abundance ~ log(Richness$Focal.Abundance))
+AbundLM <- lm(Richness$Other.Abundance ~ Richness$Focal.Abundance)
 summary(AbundLM)
 
-# plt4 <- ggplot(Richness, aes(y = Other.Abundance,
-  #                            x = log(Focal.Abundance))) +
-  # theme_tufte() + 
-  # geom_rangeframe() +
-  # geom_point(aes(color = Habitat)) + 
-  # xlab('Abundance of Focal Species') +
-  # ylab('Abundance of Co-occurring Species') +
-  # scale_color_manual(values = c('black','orange','green')) +
-  # stat_smooth(method = 'lm', se = F)
+plt4 <- ggplot(Richness, aes(y = Other.Abundance,
+                           x = Focal.Abundance)) +
+  def_plot + 
+  geom_point(aes(color = Habitat),
+             size = 3,
+             alpha = 0.7) +
+  xlab('Abundance of Focal Species') +
+  ylab('Abundance of Co-occurring Species') +
+  scale_color_manual(values = c('black','orange','green')) +
+  stat_smooth(method = 'lm', se = FALSE, size = 1)
 
-# plt4
+plt4
 
-plt5 <- plt4 <- ggplot(Richness, aes(y = NN.Abundance,
-                                     x = ESCR2)) +
+ggsave('All_Abundance_Focal_Abundance_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
+
+summary(lm(NN.Abundance ~ ESCR2, data = Richness))
+
+plt5 <-  ggplot(Richness, aes(y = NN.Abundance,
+                              x = ESCR2)) +
   def_plot + 
   geom_point(aes(color = Habitat),
              size = 3,
@@ -326,9 +336,16 @@ Fig6 <- ggplot(demo.data, aes(x = RawCRBM, y = ESCR2)) +
               formula = y ~ x,
               se = FALSE,
               color = 'grey',
-              alpha = 0.4)
+              alpha = 0.4,
+              size = 1.5)
 
 Fig6
+ggsave('ESCR_RawCRBM_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
 
 # Make Figures S3.6 (resids(lm(ESCR2~CRBM)) ~ novelty) and
 # S3.7 (ESCR2 ~ novelty, no biomass)
@@ -470,7 +487,7 @@ ggdraw() +
   draw_plot(reg.lrr.nnd.plt, x = .55, y = 0,
             width = .45, height = .33) +
   annotate('text', x = .03, y = .55,
-           label = 'Residuals from CR Biomass', size = 5,
+           label = 'Residuals from CR Biomass', size = 7,
            angle = 90) +
   annotate('text', x = .52, y = .97, label = 'A') +
   annotate('text', x = .97, y = .97, label = 'B') +
@@ -485,11 +502,11 @@ ggdraw() +
   annotate('text', x = .09, y = .115, label = 'Regional',
            size = 5) + 
   annotate('text', x = .075, y = .97, label = 'MEPP Invasive',
-           size = 3.5) +
-  annotate('point', x = .013, y = .97, color = 'blue', alpha = 0.4) +
-  annotate('text', x = .071, y = .95, label = 'MEPP Exotic',
-           size = 3.5) +
-  annotate('point', x = .013, y = .95, color = 'red', alpha = 0.4)
+           size = 5.5) +
+  annotate('point', x = .01, y = .97, color = 'blue', alpha = 0.4) +
+  annotate('text', x = .069, y = .94, label = 'MEPP Exotic',
+           size = 5.5) +
+  annotate('point', x = .01, y = .94, color = 'red', alpha = 0.4)
 
 ggsave('Residuals_by_Novelty_LRR_Appendix.png',
        path = '../Eco_Letters_Manuscript/Figures',
@@ -498,28 +515,190 @@ ggsave('Residuals_by_Novelty_LRR_Appendix.png',
        units = 'in',
        dpi = 600)
 
+
+# No Biomass in regressions
+
+loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
+                          aes(x = Magnitude,
+                              y = ESCR2)) +
+  stat_smooth(formula = y ~ x,
+              method = 'lm',
+              se = FALSE,
+              color = 'grey',
+              alpha = .3) + 
+  scale_x_continuous('MPD', 
+                     breaks = seq(140,
+                                  260,
+                                  40),
+                     limits = c(135, 260)) +
+  scale_y_continuous('',
+                     breaks = seq(-1, 3, 1),
+                     limits = c(-1, 3.3)) +
+  geom_point(alpha = .4, aes(color = MEPPInv),
+             show.legend = FALSE) +
+  scale_color_manual(values = c('red','blue'))
+
+loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
+                          aes(x = Magnitude, y = ESCR2)) +
+  stat_smooth(formula = y ~ x,
+              method = 'lm',
+              se = FALSE,
+              color = 'grey',
+              alpha = .3) +
+  geom_point(aes(color = MEPPInv),
+             alpha = .4,
+             show.legend = FALSE) +
+  scale_x_continuous('NND', 
+                     breaks = seq(0,
+                                  240,
+                                  60),
+                     limits = c(0, 240)) +
+  scale_y_continuous('',
+                     breaks = seq(-1, 3, 1),
+                     limits = c(-1, 3.3)) +
+  scale_color_manual(values = c('red','blue')) 
+
+
+loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
+                             aes(x = Magnitude, y = ESCR2)) +
+  stat_smooth(formula = y ~ x,
+              method = 'lm',
+              se = FALSE,
+              color = 'grey',
+              alpha = .3) +
+  geom_point(aes(color = MEPPInv),
+             alpha = .4,
+             show.legend = FALSE) +
+  scale_x_continuous('log(abundance-weighted MPD)', 
+                     breaks = seq(4.5,
+                                  6,
+                                  .3),
+                     limits = c(4.5, 6)) +
+  scale_y_continuous('',
+                     breaks = seq(-1, 3, 1),
+                     limits = c(-1, 3.3)) +
+  scale_color_manual(values = c('red','blue')) 
+
+
+loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
+                             aes(x = Magnitude, y = ESCR2)) +
+  stat_smooth(formula = y ~ x,
+              method = 'lm',
+              se = FALSE,
+              color = 'grey',
+              alpha = .3) +
+  geom_point(aes(color = MEPPInv),
+             alpha = .4,
+             show.legend = FALSE) +
+  scale_x_continuous('log(abundance-weighted NND)', 
+                     breaks = seq(-3,
+                                  2,
+                                  .8),
+                     limits = c(-3.1, 2)) +
+  scale_y_continuous('',
+                     breaks = seq(-1, 3, 1),
+                     limits = c(-1, 3.3)) +
+  scale_color_manual(values = c('red','blue')) 
+
+
+reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
+                          aes(x = Magnitude, y = ESCR2)) +
+  geom_point(aes(color = MEPPInv),
+             alpha = .4,
+             show.legend = FALSE) +
+  scale_x_continuous('MPD', 
+                     breaks = seq(200,
+                                  250,
+                                  10),
+                     limits = c(200, 250)) +
+  scale_y_continuous('',
+                     breaks = seq(-1, 3, 1),
+                     limits = c(-1, 3.3)) +
+  scale_color_manual(values = c('red','blue')) 
+
+
+reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
+                          aes(x = Magnitude, y = ESCR2)) +
+  geom_point(aes(color = MEPPInv),
+             alpha = .4,
+             show.legend = FALSE) +
+  scale_x_continuous('NND', 
+                     breaks = seq(0,
+                                  100,
+                                  20),
+                     limits = c(0, 110)) +
+  scale_y_continuous('',
+                     breaks = seq(-1, 3, 1),
+                     limits = c(-1, 3.3)) +
+  scale_color_manual(values = c('red','blue')) 
+
+ggdraw() +
+  draw_plot(loc.lrr.mpd.plt, x = .1, y = .67,
+            width = .45, height = .33) + 
+  draw_plot(loc.lrr.nnd.plt, x = .55, y = .67,
+            width = .45, height = .33) +
+  draw_plot(loc.lrr.aw.mpd.plt, x = .1, y = .34,
+            width = .45, height = .33) +
+  draw_plot(loc.lrr.aw.nnd.plt, x = .55, y = .34,
+            width = .45, height = .33) +
+  draw_plot(reg.lrr.mpd.plt, x = .1, y = 0,
+            width = .45, height = .33) +
+  draw_plot(reg.lrr.nnd.plt, x = .55, y = 0,
+            width = .45, height = .33) +
+  annotate('text', x = .03, y = .55,
+           label = 'Effect Size of Competitor Removal', size = 7,
+           angle = 90) +
+  annotate('text', x = .52, y = .97, label = 'A') +
+  annotate('text', x = .97, y = .97, label = 'B') +
+  annotate('text', x = .52, y = .65, label = 'C') +
+  annotate('text', x = .97, y = .65, label = 'D') +
+  annotate('text', x = .52, y = .3, label = 'E') +
+  annotate('text', x = .97, y = .3, label = 'F') +
+  annotate('text', x = .10, y = .785, label = 'Local',
+           size = 5) +
+  annotate('text', x = .10, y = .46, label = 'Local',
+           size = 5) + 
+  annotate('text', x = .09, y = .115, label = 'Regional',
+           size = 5) + 
+  annotate('text', x = .075, y = .97, label = 'MEPP Invasive',
+           size = 5.5) +
+  annotate('point', x = .01, y = .97, color = 'blue', alpha = 0.4) +
+  annotate('text', x = .069, y = .94, label = 'MEPP Exotic',
+           size = 5.5) +
+  annotate('point', x = .01, y = .94, color = 'red', alpha = 0.4)
+
+ggsave('LRR_Novelty_NoBiomass_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 8.5,
+       width = 12.5,
+       units = 'in',
+       dpi = 600)
+
+
 # Test traits for ESCR ~ Trait relationship
-trait.demo.data <- tyson$traits %>%
-  setNames(c('Species', names(tyson$traits)[-1])) %>%
-  filter(Species %in% demo.data$Species) %>%
-  left_join(., demo.data, by = 'Species')
+# trait.demo.data <- tyson$traits %>%
+#   setNames(c('Species', names(tyson$traits)[-1])) %>%
+#   filter(Species %in% demo.data$Species) %>%
+#   left_join(., demo.data, by = 'Species')
+# 
+# SLA.LM <- lm(ESCR2 ~ SLA*Habitat + CRBM, data = trait.demo.data)
+# summary(SLA.LM)
+# 
+# HT.LM <- lm(ESCR2 ~ Height*Habitat + CRBM, data = trait.demo.data)
+# summary(HT.LM)
+# 
+# Tough.LM <- lm(ESCR2 ~ Tough + CRBM, data = trait.demo.data)
+# summary(Tough.LM)
+# # Omit columns for which we only have a couple or have no observations
+# binary.columns <- c('Woody', 'Clonal', 'N_Fixer',
+#                     'Stemmed_Herb', 'Tree', 'Rosette',
+#                     'Shrub', 'Unassisted', 'Ballistic',
+#                     'EndoZoochory', 'Water')
+# 
+# for(i in unique(binary.columns)){
+#   message(paste0('\nAnova Results for trait: ', i))
+#   Anova <- aov(trait.demo.data$ESCR2 ~ unlist(trait.demo.data[ ,i]))
+#   print(summary(Anova))
+# }
 
-SLA.LM <- lm(ESCR2 ~ SLA*Habitat + CRBM, data = trait.demo.data)
-summary(SLA.LM)
 
-HT.LM <- lm(ESCR2 ~ Height*Habitat + CRBM, data = trait.demo.data)
-summary(HT.LM)
-
-Tough.LM <- lm(ESCR2 ~ Tough + CRBM, data = trait.demo.data)
-summary(Tough.LM)
-# Omit columns for which we only have a couple or have no observations
-binary.columns <- c('Woody', 'Clonal', 'N_Fixer',
-                    'Stemmed_Herb', 'Tree', 'Rosette',
-                    'Shrub', 'Unassisted', 'Ballistic',
-                    'EndoZoochory', 'Water')
-
-for(i in unique(binary.columns)){
-  message(paste0('\nAnova Results for trait: ', i))
-  Anova <- aov(trait.demo.data$ESCR2 ~ unlist(trait.demo.data[ ,i]))
-  print(summary(Anova))
-}
