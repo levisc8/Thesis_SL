@@ -1,6 +1,8 @@
-# master script w/version control---------------------
-# so I don't keep renaming things
-# depends on FunPhylo, pez, dplyr, and some others
+# Script to produce all of the analyses and figures in the main text of the paper.
+# This also contains the mixed effects models of invasive ~ novelty because the ones
+# in the main paper depended on the ones in the appendix as well. 
+# The analyses for the rest of the appendix figures are contained in 
+# Appendix_figures.R
 
 library(FunPhylo)
 library(pez)
@@ -17,13 +19,16 @@ library(broom)
 data(tyson)
 
 # do a little data munging and variable conversion
+
 spp.list <- tyson$spp.list
 for(i in 2:4){
   spp.list[ ,i] <- as.numeric(spp.list[ ,i])
 }
+
 # remove allium vineale since it's a monocot. However, I wanted to keep
 # it in the data set to be distributed because someone else might find it
 # useful. We also have trait data for it
+
 phylo <- tyson$phylo
 communities <- tyson$communities %>% filter(community != 'Allium_vineale')
 demo.data <- tyson$demo.data
@@ -36,19 +41,23 @@ diag(regionalTysonDists) <- NA
 
 # next, create extract data for all exotic species. Remove cerastium_spp. It is
 # included in the species list so that it matches with the traits data, but it 
-# is also probably covered by one of the three Cerastium species on the species list.
+# is also probably covered by one of the three Cerastium species on the species 
+# list.
+
 exotics <- filter(spp.list, Exotic == 1 & Species != 'Cerastium_spp.')
 
 exotics$MPD <- NA
 exotics$NND <- NA
 exotics$Focal <- NA
 
-# extract mpd and nnd for all exotics
+# extract mpd and nnd for all exotics. THis also creates a "Focal" dummy variable
+# so that focal species can be colored for plotting
+
 for(x in unique(exotics$Species)){
   exotics[exotics$Species == x, 'MPD'] <- mean(regionalTysonDists[ ,x],
-                                               na.rm = T)
+                                               na.rm = TRUE)
   exotics[exotics$Species == x, 'NND'] <- min(regionalTysonDists[ ,x],
-                                              na.rm = T)
+                                              na.rm = TRUE)
   exotics[exotics$Species == x, 'Focal'] <- ifelse(x %in% demo.data$Species,
                                                    'Y', 
                                                    'N')
@@ -56,8 +65,8 @@ for(x in unique(exotics$Species)){
 
 
 # local scale effect sizes, phylo only---------------
-# time for effect size of competition! phylogenetic only to start
-# we'll get to the traits later
+# phylogenetic only to start
+# trait * phylogeny comes later
 
 communities$MPD.Local <- NA
 communities$NND.Local <- NA
@@ -75,16 +84,18 @@ demo.data$Regional_NND <- NA
 
 for(x in unique(demo.data$Species)) {
   cat('Crunching data for species: ', x, '\n')
+  
   # make local phylo and functional distance matrices. The functional
   # distance matrices are really just place holders, they won't be used at
   # all because a = 1. I have to make them though because the function I wrote 
-  # to do this requires a functional distance matrix too because I'm an idiot.
+  # to do this requires a functional distance matrix (the reason for this will
+  # become apparent further down when we start varying "a")
+  
   demo.data[demo.data$Species == x, 'Regional_MPD'] <- exotics[exotics$Species == x,
                                                                'MPD']
   demo.data[demo.data$Species == x, 'Regional_NND'] <- exotics[exotics$Species == x,
                                                                'NND']
-  # Per Masha's suggestion, try logistic regression a la regional analysis,
-  # but for local communities. Is presence/absence related to novelty?
+
   local.exotics <- filter(communities, exotic_species == x &
                             alien == 1)
   
@@ -93,9 +104,7 @@ for(x in unique(demo.data$Species)) {
                                   trait.data = tyson$traits,
                                   traits = names(tyson$traits)[-1],
                                   scale = 'scaledBYrange')
-  
-  # This is not the most efficient code...
-  # Loc.Mat <- phyloMat/max(phyloMat)
+
   Loc.Mat <- phyloMat
   diag(Loc.Mat) <- NA  
   
@@ -146,13 +155,12 @@ demo.data$logAWMPD <- log(demo.data$AWMPD)
 demo.data$logAWNND <- log(demo.data$AWNND)
 
 
-# Per Ingolf Kuehn's suggestion, trying a different approach to modeling
-# the scale dependence of phylogenetic patterns and invasive classification.
-# Basically, it's a mixed effects model with novelty metric and scale
+# mixed effects model with novelty metric and scale
 # as interaction terms. We'll then perform a likelihood ratio test with
-# gradually reduced models that first remove the interaction term, then
-# the scale term altogether. A subsequent ANOVA should tell us if scale
-# and/or novelty matter at all.
+# successively more complicated models and see which is preferred. The key point 
+# here is whether the model with scale * novelty is better, and whether that interaction
+# is significant. If not, then we can conclude that novelty isn't necessarily important
+# at either scale
 
 exotics$Scale <- 'Regional'
 All.Local.exotics$Scale <- 'Local'
@@ -193,8 +201,8 @@ NullScaleRegNND <- glmer(Invasive ~ NND + (1|Species),
                          family = binomial)
 
 # I get warnings about identifiability and convergence with 4/6 models.
-# I'll try to rescale the continuous variables and refit them, per the 
-# warning messages
+# Re-fit all of the models as they will not be comparable with variables on
+# different scales.
 
 allExotics <- mutate(allExotics, 
                      MPDScaled = scale(MPD, center = TRUE, scale = TRUE),
@@ -264,166 +272,6 @@ MpdLrt <- anova(NullScaleRegMPDRescale,
 NndLrt
 MpdLrt
 
-NndPred <- augment(FullScaleRegNNDRescale) %>%
-  mutate(Pred = 1/(1 + exp(-(.fitted)))) %>%
-  select(c(Invasive:Species, Pred)) %>%
-  mutate(Focal = ifelse(Species %in% demo.data$Species, "Y", "N"))
-
-
-# Plot the data - I am tentatively removing these from the manuscript. I don't
-# think they are helpful for understanding the results and plotting fitted lines
-# for any of them is a total pain
-# 
-# plt.blank <- theme(panel.grid.major = element_blank(),
-#                    panel.grid.minor = element_blank(),
-#                    panel.background = element_rect(fill = NA,
-#                                                    size = 1.25,
-#                                                    color = 'black'),
-#                    axis.title = element_text(size = 18),
-#                    axis.line = element_line(size = 1.3),
-#                    axis.text = element_text(size = 16))
-# 
-# regional.nnd.plt <- ggplot(data = exotics,
-#                            aes(x = NND,
-#                                y = Invasive)) +
-#   geom_jitter(aes(color = Focal), 
-#               alpha = 0.4,
-#               width = 0, 
-#               height = 0.075,
-#               show.legend = FALSE,
-#               size = 5) + 
-#   scale_color_manual(values = c('blue', 'red')) +
-#   xlab('') +
-#   scale_y_continuous('',
-#                      breaks = seq(0, 1, 1),
-#                      limits = c(-0.15, 1.25)) +
-#   scale_x_continuous('', 
-#                      breaks = seq(0, max(exotics$NND, na.rm = TRUE), 40),
-#                      limits = c(0, max(exotics$NND, na.rm = TRUE) + 5)) +
-#   plt.blank +
-#   annotate('text', x = 177,
-#            y = 1.2,
-#            label = 'A',
-#            size = 8)
-# 
-# regional.mpd.plt <- ggplot(data = exotics,
-#                            aes(x = MPD,
-#                                y = Invasive)) +
-#   geom_jitter(aes(color = Focal),
-#               alpha = 0.4,
-#               width = 0,
-#               height = 0.075,
-#               show.legend = FALSE,
-#               size = 5) + 
-#   scale_color_manual(values = c('blue', 'red')) +
-#   xlab('') +
-#   scale_y_continuous('',
-#                      breaks = seq(0, 1, 1),
-#                      limits = c(-0.15, 1.25)) +
-#   scale_x_continuous('', 
-#                      breaks = seq(200, 280, 20),
-#                      limits = c(200,
-#                                 max(exotics$MPD, 
-#                                     na.rm = TRUE) + 5)) +
-#   plt.blank +
-#   annotate('text',
-#            x = 280, 
-#            y = 1.2,
-#            label = 'B',
-#            size = 8)
-# 
-# 
-# local.nnd.plt <- ggplot(data = All.Local.exotics,
-#                         aes(x = NND.Local,
-#                             y = Invasive)) +
-#   geom_jitter(aes(color = Focal), 
-#               alpha = 0.4,
-#               width = 0,
-#               height = 0.075,
-#               show.legend = FALSE,
-#               size = 5) + 
-#   scale_color_manual(values = c('blue', 'red')) +
-#   xlab('Nearest Neighbor Distance') +
-#   scale_y_continuous('',
-#                      breaks = seq(0, 1, 1),
-#                      limits = c(-0.15, 1.15)) +
-#   scale_x_continuous('Nearest Neighbor Distance', 
-#                      breaks = seq(0, max(All.Local.exotics$NND.Local), 60),
-#                      limits = c(0, max(All.Local.exotics$NND.Local))) +
-#   plt.blank +
-#   annotate('text',
-#            x = 240, 
-#            y = 1.15, 
-#            label = 'C',
-#            size = 8)
-# 
-# local.mpd.plt <- ggplot(data = All.Local.exotics,
-#                         aes(x = MPD.Local, 
-#                             y = Invasive)) +
-#   geom_jitter(aes(color = Focal), 
-#               alpha = 0.4,
-#               width = 0, 
-#               height = 0.075,
-#               show.legend = FALSE,
-#               size = 5) + 
-#   scale_color_manual(values = c('blue', 'red')) +
-#   xlab('Nearest Neighbor Distance') +
-#   scale_y_continuous('',
-#                      breaks = seq(0, 1, 1),
-#                      limits = c(-0.15, 1.15)) +
-#   scale_x_continuous('Mean Pairwise Distance', 
-#                      breaks = seq(140, 280, 40),
-#                      limits = c(min(All.Local.exotics$MPD.Local),
-#                                 max(All.Local.exotics$MPD.Local))) +
-#   plt.blank +
-#   annotate('text', x = 275, y = 1.15, label = 'D',
-#            size = 8)
-# 
-# ggdraw() +
-#   draw_plot(regional.nnd.plt, x = .1, y = .5, 
-#             height = .45, width = .45) +
-#   draw_plot(regional.mpd.plt, x = .55, y = .5,
-#             height = .45, width = .45) + 
-#   draw_plot(local.nnd.plt, x = .1, y = 0.05,
-#             height = .45, width = .45) +
-#   draw_plot(local.mpd.plt,
-#             x = .55, y = 0.05,
-#             height = .45, width = .45) + 
-#   annotate('text', x = .1, y = .05, 
-#            label = 'Local Scale',
-#            size = 6) +
-#   annotate('text', x = .1, y = .981, 
-#            label = 'Regional Scale',
-#            size = 6) + 
-#   annotate('text', x = .08, y = .575, 
-#            label = 'Focal Species', 
-#            size = 6) +
-#   annotate('text', x = .055, y = .522, 
-#            label = 'Yes',
-#            size = 6) + 
-#   annotate('point', x = .025, y = .522, 
-#            color = 'red', alpha = .2, size = 5) + 
-#   annotate('text', x = .055, y = .492, 
-#            label = 'No',
-#            size = 6) + 
-#   annotate('point', x = .025, y = .492, 
-#            color = 'blue', alpha = .2, size = 5) +
-#   annotate('text', x = .09, y = .8875,
-#            label = 'Invasive', size = 6) +
-#   annotate('text', x = .1, y = .63, 
-#            label = 'Exotic', size = 6) +
-#   annotate('text', x = .09, y = .4355, 
-#            label = 'Invasive', size = 6) +
-#   annotate('text', x = .1, y = .178,
-#            label = 'Exotic', size = 6)
-# 
-# ggsave(filename = 'Inv_Classification_For_Manuscript.png',
-#        path = '../Eco_Letters_Manuscript/Figures',
-#        height = 8,
-#        width = 11,
-#        units = 'in',
-#        dpi = 600)
-
 # local ESCR regressions-------------
 mpdLM <- lm(ESCR2 ~ MPD + CRBM, data = demo.data)
 nndLM <- lm(ESCR2 ~ NND + CRBM, data = demo.data)
@@ -449,7 +297,7 @@ logAWnndCT <- summary(logAWnndLM)$coefficients %>% data.frame()
 regMPDCT <- summary(RegMPDLM)$coefficients %>% data.frame()
 regNNDCT <- summary(RegNNDLM)$coefficients %>% data.frame()
 
-# more table formatting BS
+# more table formatting
 modelTable <- rbind(mpdCT, nndCT,
                     logAWmpdCT, logAWnndCT,
                     regMPDCT, regNNDCT)
@@ -502,14 +350,8 @@ modelTable$p.value <- lapply(modelTable$p.value,
 write.csv(modelTable, '../Eco_Letters_Manuscript/Figures/Phylo_models_output.csv', 
           na = "",
           row.names = FALSE)
-# 
-# # make model table for logistic regressions
-# regmpdCT <- summary(mpdGLM)$coefficients %>% data.frame() 
-# regnndCT <- summary(nndGLM)$coefficients %>% data.frame()
-# locmpdCT <- summary(LocalMPDInvGLM)$coefficients %>% data.frame()
-# locnndCT <- summary(LocalNNDInvGLM)$coefficients %>% data.frame()
-# 
 
+# Regional scale logistic regressions - for the manuscript text
 logisticModelTable <- data.frame(ModelType = c(rep('Nearest Neighbor Distance', 5),
                                                rep('Mean Pairwise Distance', 3)),
                                  rbind(tidy(FullScaleRegNNDRescale),
@@ -528,6 +370,8 @@ logisticModelTable$`p-value` <- lapply(logisticModelTable$`p-value`,
 write.csv(logisticModelTable,
           file = '../Eco_Letters_Manuscript/Figures/Logistic_regression_outputs.csv',
           na = "", row.names = FALSE)
+
+# Regional scale logistic regressions - for the appendix
 
 AppendixModelTable <- data.frame(ModelType = c(rep('Nearest Neighbor Distance', 7),
                                                rep('Mean Pairwise Distance', 9)),
@@ -549,15 +393,19 @@ write.csv(AppendixModelTable,
           file = '../Eco_Letters_Manuscript/Figures/All_logistic_regression_outputs_for_Appendix.csv',
           na = "", row.names = FALSE)
           
-# plots! build first, draw later
+# Figure 1 plots. THese are assembled on a single canvas using cowplot to add 
+# annotations
+
 bad.mets <- c('AWNND','AWMPD')
 forPlot <- gather(demo.data, Metric, Magnitude, MPD:logAWNND) %>% 
   filter(!Metric %in% bad.mets )
 forPlot$MEPPInv <- ifelse(forPlot$MEPPInv == 1, 'Y', 'N')
  
-# create column of predictions for each regression that needs them
-# ggplot will not draw trend lines with covariates, so we have to make
-# them ourselves :(
+# generate predictions from each significant model so we can plot them as
+# trendlines. Tragically, the stat_smooth model formula interface won't work with
+# additional covariates (or, rather, I can't figure out a way to make it work.
+# It may actually be possible).
+
 x <- seq(min(demo.data$MPD), max(demo.data$MPD), length.out = 14)
 y <- seq(min(demo.data$CRBM), max(demo.data$CRBM), length.out = 14)
 MPD.Preds <- predict(mpdLM, data.frame(MPD = x,
@@ -745,7 +593,7 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
              size = 2) +
   plt.blank
 
-# create blank canvas and get to drawing!
+# Draw the plots and add axis labels where needed
 
 ggdraw() +
   draw_plot(loc.lrr.mpd.plt, x = .1, y = .67,
@@ -805,76 +653,19 @@ ggsave(filename = 'LRR_Regressions_Phylo_Only_For_Manuscript.png',
   
 # functional phylogenetic regressions-------------
 # next, determine best models using latest version of invasives FPD
-# since abundances don't seem to matter much, I'll leave those out (for
-# sake of computing time) and use the shiny app to find R2~a curve with highest
-# R2
+# https://sam-levin.shinyapps.io/Invasives_FPD/
 
 # ----- leaving RStudio Beep Boop, report back w/ best models-----
 
 # ----- Beep Boop and we're back. Best model was Phylogeny + SLA, Ht, Flower period,
-# and leaf toughness with an a-value of .3-.35 (results vary due to rarefying, 
-# but the max R^2 is always ~.85). Creating NMDS plots for all species w/ those
-# traits and arranging them in order of descending effect size of competition
+# and leaf toughness with an a-value of 0.3-0.4 (best a's vary due to rarefying, 
+# but the max R^2 is always ~0.8 and it's always in this range). 
 
 # NMDS Plots for traits + phylogeny from best model ---------------
 demo.data <- arrange(demo.data, desc(ESCR2))
 
 traits <- c('Height', 'SLA', 'Tough', 'Flower.Period')
-par(mfrow = c(2,2))
 trait.data <- tyson$traits
-
-# for(x in unique(demo.data$Species)){
-#   
-#   cat('Plotting species: ', x, '\n')
-#   # make functional and phylogenetic distance matrices
-#   phyloMat <- make_local_phylo_dist(x, communities, phylo)
-#   funMat <- make_local_trait_dist(x, communities, 
-#                                   trait.data = trait.data,
-#                                   traits = traits,
-#                                   scale = 'scaledBYrange') %>% as.matrix %>%
-#             data.frame()
-#   
-#   # subset phylomat so it matches functional mat
-#   phyloMat <- phyloMat[rownames(funMat),
-#                        names(funMat)] %>% data.frame()
-#   
-#   # a little bit of defensive programming to ensure we don't actually
-#   # mash up mismatched matrices
-#   if(!identical(rownames(funMat), rownames(phyloMat)) |
-#      !identical(names(funMat), names(phyloMat))){
-#     stop('check code for subsampling phylo matrix')
-#   }
-#   # since the best model seems to depend on rarefied outputs, I'm
-#   # using both values that resulted in best models. There shouldn't
-#   # be any major differences though
-#   UWDat35 <- func_phy_dist(FDist = funMat, PDist = phyloMat,
-#                          phyloWeight = .35, p = 2)  
-#   
-#   UWDat3 <- func_phy_dist(FDist = funMat, PDist = phyloMat,
-#                            phyloWeight = .3, p = 2) 
-#   
-#   # run NMDS and plot results for a = .35 and a = .3
-#   # TraitNMDS <- metaMDS(UWDat35, trymax = 200, trace = 0)
-#   # plot(TraitNMDS, type = 'n', main = paste0(x, ' a = .35'))
-#   # orditorp(TraitNMDS, display = 'sites', air = .01,
-#   #          select = !rownames(UWDat35) %in% x,
-#   #          col='red')
-#   #   text(TraitNMDS$points[rownames(TraitNMDS$points) == x,1],
-#   #      TraitNMDS$points[rownames(TraitNMDS$points) == x,2],
-#   #      label = x, col = 'blue', cex = .7)
-#   #   
-#   #   TraitNMDS <- metaMDS(UWDat3, trymax = 200, trace = 0)
-#   #   plot(TraitNMDS, type = 'n', main = paste0(x, ' a = .3'))
-#   #   orditorp(TraitNMDS, display = 'sites', air = .01,
-#   #            select = !rownames(UWDat3) %in% x,
-#   #            col='red')
-#   #   text(TraitNMDS$points[rownames(TraitNMDS$points) == x,1],
-#   #        TraitNMDS$points[rownames(TraitNMDS$points) == x,2],
-#   #        label = x, col = 'blue', cex = .7)
-# }
-# 
-
-# R^2~a value for best models from Shiny Phylo Fun App
 
 a_seq <- seq(0, 1, .025)
 R2dat <- data.frame(A = a_seq,
@@ -890,8 +681,12 @@ for(x in unique(demo.data$Species)){
   
   
   # phylo and functional distance matrices
-  phylo.mat <- make_local_phylo_dist(x, communities, phylo)
-  fun.mat <- make_local_trait_dist(x, communities, trait.data,
+  phylo.mat <- make_local_phylo_dist(x, 
+                                     communities, 
+                                     phylo)
+  fun.mat <- make_local_trait_dist(x, 
+                                   communities, 
+                                   trait.data,
                                    traits = traits,
                                    scale = 'scaledBYrange')
   
@@ -900,7 +695,9 @@ for(x in unique(demo.data$Species)){
     # FPD matrix for rarefied communities
     FPD <- rarefy_FPD(x, phylo.mat = phylo.mat,
                       fun.mat = fun.mat,
-                      n.rare = 11, a = a, p = 2,
+                      n.rare = 11,
+                      a = a, 
+                      p = 2,
                       abundance.weighted = FALSE,
                       community.data = NULL)
     
@@ -910,13 +707,6 @@ for(x in unique(demo.data$Species)){
     
   }
 }
-
-# if(any(is.na(mod.data))) { # alias for is.nan. Apparently doesn't work on data.frames
-#   mod.data[is.na(mod.data)] <- NA
-# }
-# 
-# # log transform data
-# mod.data[, 14:95] <- log(mod.data[ ,14:95])
 
 # run models for each level of a, extract R^2
 for(a in a_seq){
@@ -929,17 +719,22 @@ for(a in a_seq){
 }
 
 # find peak in curve
+
 maxr2 <- max(R2dat[ ,2:3])
 if(maxr2 %in% R2dat$MPD) {
+  
   maxr2met <- 'MPD'
   maxr2A <- R2dat[which(R2dat$MPD == maxr2), 'A']
+  
 } else if(maxr2 %in% R2dat$NND) {
+  
   maxr2met <- 'NND'
   maxr2A <- R2dat[which(R2dat$NND == maxr2), 'A']
   
 }
 
 # plot results
+
 Fig <- ggplot(data = R2dat, aes(x = A)) +
   geom_point(aes(y = NND, color = 'NND'),
              alpha = 0.4,

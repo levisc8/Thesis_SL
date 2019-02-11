@@ -675,30 +675,167 @@ ggsave('LRR_Novelty_NoBiomass_Appendix.png',
        dpi = 600)
 
 
-# Test traits for ESCR ~ Trait relationship
-# trait.demo.data <- tyson$traits %>%
-#   setNames(c('Species', names(tyson$traits)[-1])) %>%
-#   filter(Species %in% demo.data$Species) %>%
-#   left_join(., demo.data, by = 'Species')
-# 
-# SLA.LM <- lm(ESCR2 ~ SLA*Habitat + CRBM, data = trait.demo.data)
-# summary(SLA.LM)
-# 
-# HT.LM <- lm(ESCR2 ~ Height*Habitat + CRBM, data = trait.demo.data)
-# summary(HT.LM)
-# 
-# Tough.LM <- lm(ESCR2 ~ Tough + CRBM, data = trait.demo.data)
-# summary(Tough.LM)
-# # Omit columns for which we only have a couple or have no observations
-# binary.columns <- c('Woody', 'Clonal', 'N_Fixer',
-#                     'Stemmed_Herb', 'Tree', 'Rosette',
-#                     'Shrub', 'Unassisted', 'Ballistic',
-#                     'EndoZoochory', 'Water')
-# 
-# for(i in unique(binary.columns)){
-#   message(paste0('\nAnova Results for trait: ', i))
-#   Anova <- aov(trait.demo.data$ESCR2 ~ unlist(trait.demo.data[ ,i]))
-#   print(summary(Anova))
-# }
+# Test traits for ESCR ~ Trait relationship. Analyses retained in the script, but
+# no figures for the appendix. Our replication is just too low to have any power.
+# But now you know we tried! ;)
+
+trait.demo.data <- tyson$traits %>%
+  setNames(c('Species', names(tyson$traits)[-1])) %>%
+  filter(Species %in% demo.data$Species) %>%
+  left_join(., demo.data, by = 'Species')
+
+SLA.LM <- lm(ESCR2 ~ SLA*Habitat + CRBM, data = trait.demo.data)
+summary(SLA.LM)
+
+HT.LM <- lm(ESCR2 ~ Height*Habitat + CRBM, data = trait.demo.data)
+summary(HT.LM)
+
+Tough.LM <- lm(ESCR2 ~ Tough + CRBM, data = trait.demo.data)
+summary(Tough.LM)
+
+
+
+# Create figure s1.2 (r2~a for conserved traits)
+traits <- c('Height', 'WoodDens', "Stemmed_Herb", 
+            "Tree", "Rosette", "Vine", 
+            "SubShrub", "Shrub", "Elongated_Leafy_Rhizomatous", "N_Fixer")
+trait.data <- tyson$traits
+
+a_seq <- seq(0, 1, .025)
+R2dat <- data.frame(A = a_seq,
+                    NND = rep(NA, length(a_seq)),
+                    MPD = rep(NA, length(a_seq)))
+mod.data <- demo.data
+
+mod.data[ , paste0('nna_', a_seq)] <- NA
+mod.data[ , paste0('mpa_', a_seq)] <- NA  
+
+for(x in unique(demo.data$Species)){
+  cat('Calculating FPD for species: ', x, '\n')
+  
+  
+  # phylo and functional distance matrices
+  phylo.mat <- make_local_phylo_dist(x, 
+                                     communities, 
+                                     phylo)
+  fun.mat <- make_local_trait_dist(x, 
+                                   communities, 
+                                   trait.data,
+                                   traits = traits,
+                                   scale = 'scaledBYrange')
+  
+  # run for each level of a
+  for(a in a_seq){
+    # FPD matrix for rarefied communities
+    FPD <- rarefy_FPD(x, phylo.mat = phylo.mat,
+                      fun.mat = fun.mat,
+                      n.rare = 11,
+                      a = a, 
+                      p = 2,
+                      abundance.weighted = FALSE,
+                      community.data = NULL)
+    
+    # store results for each species
+    mod.data[mod.data$Species == x, paste0('nna_', a)] <- FPD$rare.nnd
+    mod.data[mod.data$Species == x, paste0('mpa_', a)] <- FPD$rare.mpd
+    
+  }
+}
+
+# run models for each level of a, extract R^2
+for(a in a_seq){
+  i <- which(a_seq == a)
+  nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a), " + CRBM"))
+  mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a), " + CRBM"))
+  
+  R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
+  R2dat$MPD[i] <- r2_calc(mod.data, mpd.form) 
+}
+
+# find peak in curve
+
+maxr2 <- max(R2dat[ ,2:3])
+if(maxr2 %in% R2dat$MPD) {
+  
+  maxr2met <- 'MPD'
+  maxr2A <- R2dat[which(R2dat$MPD == maxr2), 'A']
+  
+} else if(maxr2 %in% R2dat$NND) {
+  
+  maxr2met <- 'NND'
+  maxr2A <- R2dat[which(R2dat$NND == maxr2), 'A']
+  
+}
+
+# plot results
+
+Fig <- ggplot(data = R2dat, aes(x = A)) +
+  geom_point(aes(y = NND, color = 'NND'),
+             alpha = 0.4,
+             show.legend = FALSE,
+             size = 3) +
+  geom_line(aes(y = NND, color = 'NND'), 
+            alpha = 0.4,
+            show.legend = FALSE,
+            size = 1.25) + 
+  geom_point(aes(y = MPD, color = 'MPD'),
+             alpha = 0.4,
+             show.legend = FALSE,
+             size = 3) +
+  geom_line(aes(y = MPD, color = 'MPD'), 
+            alpha = 0.4,
+            show.legend = FALSE,
+            size = 1.25) +
+  scale_x_continuous('', limits = c(0,1)) +
+  scale_y_continuous('', limits = c(0,1)) + 
+  scale_color_manual('',
+                     values = c("red", "blue")) + 
+  annotate('text',
+           label = paste0('Maximum R^2: ', round(maxr2, 3)),
+           x = .85, y = .95) +
+  annotate('text', 
+           label = paste0('Best a-value: ', maxr2A),
+           x = .85, y = .9) +
+  annotate('text', 
+           label = paste0('Best Performing Metric: ', maxr2met),
+           x = .85, y = .85)
+
+ggdraw() +
+  draw_plot(Fig,
+            x = .1, y = .1,
+            height = 0.88, width = 0.88) +
+  annotate('text', x = 0.075, y = 0.55,
+           label = 'Adjusted R-Squared',
+           angle = 90, size = 5) +
+  annotate('text', x = 0.205, y = 0.09,
+           label = 'Functional\n information \nonly',
+           size = 5) +
+  annotate('text', x = 0.93, y = 0.09,
+           label = 'Phylogenetic \ninformation \nonly',
+           size = 5) +
+  annotate('text', x = 0.56, y = .11,
+           label = 'Phylogenetic Scaling Parameter',
+           size = 5) + 
+  annotate('text', x = 0.69, y = .1075,
+           label = '~italic(a)',
+           parse = TRUE,
+           size = 6) +
+  annotate('text', x = 0.07, y = 0.95, 
+           label = 'Metric', size = 4.5) +
+  annotate('text', x = 0.077, y = 0.92,
+           label = 'NND', size = 3.75) + 
+  annotate('text', x = 0.078, y = 0.89,
+           label = 'MPD', size = 3.75) +
+  annotate('point', x = 0.04, y = 0.92,
+           color = 'blue', alpha = 0.4) +
+  annotate('point', x = 0.04, y = 0.89, 
+           color = 'red', alpha = 0.4)
+
+ggsave(filename = 'R2_A_Conserved_Traits_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 8,
+       width = 12.5,
+       units = 'in',
+       dpi = 600)
 
 
