@@ -90,6 +90,13 @@ ggsave('ESCR_by_Richness_Appendix.png',
        units = 'in',
        dpi = 600)
 
+ggsave('Fig_S3_1.pdf',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
+
 RichCRBM <- lm(CRBM ~ Richness, data = Richness)
 summary(RichCRBM)
 
@@ -111,6 +118,14 @@ ggsave('CRBM_by_Richness_Appendix.png',
        units = 'in',
        dpi = 600)
 
+ggsave('Fig_S3_2.pdf',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
+
+
 RichAbund <- lm(Richness ~ Focal.Abundance, data = Richness)
 summary(RichAbund)
 
@@ -131,6 +146,14 @@ ggsave('Richness_Focal_Abundance_Appendix.png',
        width = 8,
        units = 'in',
        dpi = 600)
+
+ggsave('Fig_S3_3.pdf',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
+
 
 AbundLM <- lm(Richness$Other.Abundance ~ Richness$Focal.Abundance)
 summary(AbundLM)
@@ -155,26 +178,15 @@ ggsave('All_Abundance_Focal_Abundance_Appendix.png',
        units = 'in',
        dpi = 600)
 
-summary(lm(NN.Abundance ~ ESCR2, data = Richness))
-
-plt5 <-  ggplot(Richness, aes(y = NN.Abundance,
-                              x = ESCR2)) +
-  def_plot + 
-  geom_point(aes(color = Habitat),
-             size = 3,
-             alpha = 0.7) + 
-  xlab('Effect size of Competitor Removal') +
-  ylab('Abundance of Phylogenetic Nearest Neighbor') +
-  scale_color_manual(values = c('black','orange','green')) 
-
-plt5
-
-ggsave('NN_Abundance_ESCR_Appendix.png',
+ggsave('Fig_S3_4.pdf',
        path = '../Eco_Letters_Manuscript/Figures',
        height = 7,
        width = 8,
        units = 'in',
        dpi = 600)
+
+
+summary(lm(NN.Abundance ~ ESCR2, data = Richness))
 
 
 outTable <- select(Richness, -c(exotic_species, Other.Abundance))
@@ -340,7 +352,15 @@ Fig6 <- ggplot(demo.data, aes(x = RawCRBM, y = ESCR2)) +
               size = 1.5)
 
 Fig6
+
 ggsave('ESCR_RawCRBM_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 7,
+       width = 8,
+       units = 'in',
+       dpi = 600)
+
+ggsave('Fig_S3_5.pdf',
        path = '../Eco_Letters_Manuscript/Figures',
        height = 7,
        width = 8,
@@ -359,7 +379,14 @@ forPlot <- gather(demo.data, Metric, Magnitude, MPD:logAWNND) %>%
 
 loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                           aes(x = Magnitude,
-                              y = AsymResids)) +
+                              y = AsymResids)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2)  + 
+  geom_point(aes(color = MEPPInv),
+             alpha = .4,
+             show.legend = FALSE,
+             size = 4) +
   stat_smooth(formula = y ~ x,
               method = 'lm',
               se = FALSE,
@@ -371,14 +398,19 @@ loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                                   40),
                      limits = c(135, 260)) +
   scale_y_continuous('',
-                     breaks = seq(-2, 2, 1),
-                     limits = c(-2, 2)) +
-  geom_point(alpha = .4, aes(color = MEPPInv),
-             show.legend = FALSE) +
-  scale_color_manual(values = c('red','blue'))
+                     breaks = seq(-1, 2, 1),
+                     limits = c(-1, 2.3)) +
+  scale_color_manual(values = c('red','blue')) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2) 
+
 
 loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
-                          aes(x = Magnitude, y = AsymResids)) +
+                          aes(x = Magnitude, y = AsymResids)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2) +
   stat_smooth(formula = y ~ x,
               method = 'lm',
               se = FALSE,
@@ -386,20 +418,24 @@ loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
               alpha = .3) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('NND', 
                      breaks = seq(0,
                                   240,
                                   60),
                      limits = c(0, 240)) +
   scale_y_continuous('',
-                     breaks = seq(-2, 2, 1),
-                     limits = c(-2, 2)) +
-  scale_color_manual(values = c('red','blue')) 
+                     breaks = seq(-1, 2, 1),
+                     limits = c(-1, 2.3)) +
+  scale_color_manual(values = c('red','blue'))
 
 
 loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
-                             aes(x = Magnitude, y = AsymResids)) +
+                             aes(x = Magnitude, y = AsymResids)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2) +
   stat_smooth(formula = y ~ x,
               method = 'lm',
               se = FALSE,
@@ -407,20 +443,23 @@ loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
               alpha = .3) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE, 
+             size = 4) +
   scale_x_continuous('log(abundance-weighted MPD)', 
                      breaks = seq(4.5,
                                   6,
                                   .3),
                      limits = c(4.5, 6)) +
   scale_y_continuous('',
-                     breaks = seq(-2, 2, 1),
-                     limits = c(-2, 2)) +
-  scale_color_manual(values = c('red','blue')) 
-
+                     breaks = seq(-1, 2, 1),
+                     limits = c(-1, 2.3)) +
+  scale_color_manual(values = c('red','blue'))
 
 loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
-                             aes(x = Magnitude, y = AsymResids)) +
+                             aes(x = Magnitude, y = AsymResids)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2)  +
   stat_smooth(formula = y ~ x,
               method = 'lm',
               se = FALSE,
@@ -428,48 +467,59 @@ loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
               alpha = .3) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('log(abundance-weighted NND)', 
                      breaks = seq(-3,
                                   2,
                                   .8),
                      limits = c(-3.1, 2)) +
   scale_y_continuous('',
-                     breaks = seq(-2, 2, 1),
-                     limits = c(-2, 2)) +
-  scale_color_manual(values = c('red','blue')) 
+                     breaks = seq(-1, 2, 1),
+                     limits = c(-1, 2.3)) +
+  scale_color_manual(values = c('red','blue'))
+
 
 
 reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
-                          aes(x = Magnitude, y = AsymResids)) +
+                          aes(x = Magnitude, y = AsymResids)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2)  +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('MPD', 
                      breaks = seq(200,
                                   250,
                                   10),
                      limits = c(200, 250)) +
   scale_y_continuous('',
-                     breaks = seq(-2, 2, 1),
-                     limits = c(-2, 2)) +
-  scale_color_manual(values = c('red','blue')) 
+                     breaks = seq(-1, 2, 1),
+                     limits = c(-1, 2.3)) +
+  scale_color_manual(values = c('red','blue'))
 
 
 reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
-                          aes(x = Magnitude, y = AsymResids)) +
+                          aes(x = Magnitude, y = AsymResids)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('NND', 
                      breaks = seq(0,
                                   100,
                                   20),
                      limits = c(0, 110)) +
   scale_y_continuous('',
-                     breaks = seq(-2, 2, 1),
-                     limits = c(-2, 2)) +
+                     breaks = seq(-1, 2, 1),
+                     limits = c(-1, 2.3)) +
   scale_color_manual(values = c('red','blue')) 
+
 # create blank canvas and get to drawing!
 
 library(cowplot)
@@ -489,29 +539,42 @@ ggdraw() +
   annotate('text', x = .03, y = .55,
            label = 'Residuals from CR Biomass', size = 7,
            angle = 90) +
-  annotate('text', x = .52, y = .97, label = 'A') +
-  annotate('text', x = .97, y = .97, label = 'B') +
-  annotate('text', x = .52, y = .65, label = 'C') +
-  annotate('text', x = .97, y = .65, label = 'D') +
-  annotate('text', x = .52, y = .3, label = 'E') +
-  annotate('text', x = .97, y = .3, label = 'F') +
+  annotate('text', x = .52, y = .97, label = 'A',
+           size = 5) +
+  annotate('text', x = .97, y = .97, label = 'B',
+           size = 5) +
+  annotate('text', x = .52, y = .65, label = 'C',
+           size = 5) +
+  annotate('text', x = .97, y = .65, label = 'D',
+           size = 5) +
+  annotate('text', x = .52, y = .3, label = 'E',
+           size = 5) +
+  annotate('text', x = .97, y = .3, label = 'F',
+           size = 5) +
   annotate('text', x = .10, y = .785, label = 'Local',
            size = 5) +
   annotate('text', x = .10, y = .46, label = 'Local',
            size = 5) + 
   annotate('text', x = .09, y = .115, label = 'Regional',
            size = 5) + 
-  annotate('text', x = .075, y = .97, label = 'MEPP Invasive',
+  annotate('text', x = .075, y = .97, label = 'Invasive',
            size = 5.5) +
   annotate('point', x = .01, y = .97, color = 'blue', alpha = 0.4) +
-  annotate('text', x = .069, y = .94, label = 'MEPP Exotic',
+  annotate('text', x = .069, y = .94, label = 'Exotic',
            size = 5.5) +
   annotate('point', x = .01, y = .94, color = 'red', alpha = 0.4)
 
-ggsave('Residuals_by_Novelty_LRR_Appendix.png',
+ggplot2::ggsave('Residuals_by_Novelty_LRR_Appendix.png',
+                path = '../Eco_Letters_Manuscript/Figures',
+                height = 8.5,
+                width = 12.5,
+                units = 'in',
+                dpi = 600)
+
+ggsave('Fig_S3_7.pdf',
        path = '../Eco_Letters_Manuscript/Figures',
-       height = 8.5,
-       width = 12.5,
+       height = 7,
+       width = 8,
        units = 'in',
        dpi = 600)
 
@@ -520,7 +583,10 @@ ggsave('Residuals_by_Novelty_LRR_Appendix.png',
 
 loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                           aes(x = Magnitude,
-                              y = ESCR2)) +
+                              y = ESCR2)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2)  +
   stat_smooth(formula = y ~ x,
               method = 'lm',
               se = FALSE,
@@ -534,12 +600,17 @@ loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
   scale_y_continuous('',
                      breaks = seq(-1, 3, 1),
                      limits = c(-1, 3.3)) +
-  geom_point(alpha = .4, aes(color = MEPPInv),
-             show.legend = FALSE) +
+  geom_point(alpha = .4,
+             aes(color = MEPPInv),
+             show.legend = FALSE,
+             size = 4) +
   scale_color_manual(values = c('red','blue'))
 
 loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
-                          aes(x = Magnitude, y = ESCR2)) +
+                          aes(x = Magnitude, y = ESCR2)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2)  +
   stat_smooth(formula = y ~ x,
               method = 'lm',
               se = FALSE,
@@ -547,7 +618,8 @@ loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
               alpha = .3) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('NND', 
                      breaks = seq(0,
                                   240,
@@ -556,11 +628,14 @@ loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
   scale_y_continuous('',
                      breaks = seq(-1, 3, 1),
                      limits = c(-1, 3.3)) +
-  scale_color_manual(values = c('red','blue')) 
+  scale_color_manual(values = c('red','blue'))
 
 
 loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
-                             aes(x = Magnitude, y = ESCR2)) +
+                             aes(x = Magnitude, y = ESCR2)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2) +
   stat_smooth(formula = y ~ x,
               method = 'lm',
               se = FALSE,
@@ -568,7 +643,8 @@ loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
               alpha = .3) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('log(abundance-weighted MPD)', 
                      breaks = seq(4.5,
                                   6,
@@ -577,11 +653,14 @@ loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
   scale_y_continuous('',
                      breaks = seq(-1, 3, 1),
                      limits = c(-1, 3.3)) +
-  scale_color_manual(values = c('red','blue')) 
+  scale_color_manual(values = c('red','blue'))
 
 
 loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
-                             aes(x = Magnitude, y = ESCR2)) +
+                             aes(x = Magnitude, y = ESCR2)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2) +
   stat_smooth(formula = y ~ x,
               method = 'lm',
               se = FALSE,
@@ -589,7 +668,8 @@ loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
               alpha = .3) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('log(abundance-weighted NND)', 
                      breaks = seq(-3,
                                   2,
@@ -598,14 +678,18 @@ loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
   scale_y_continuous('',
                      breaks = seq(-1, 3, 1),
                      limits = c(-1, 3.3)) +
-  scale_color_manual(values = c('red','blue')) 
+  scale_color_manual(values = c('red','blue'))
 
 
 reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
-                          aes(x = Magnitude, y = ESCR2)) +
+                          aes(x = Magnitude, y = ESCR2)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('MPD', 
                      breaks = seq(200,
                                   250,
@@ -618,10 +702,14 @@ reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
 
 
 reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
-                          aes(x = Magnitude, y = ESCR2)) +
+                          aes(x = Magnitude, y = ESCR2)) + 
+  geom_hline(yintercept = 0, linetype = 'dotted',
+             alpha = 0.5,
+             size = 2) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
-             show.legend = FALSE) +
+             show.legend = FALSE,
+             size = 4) +
   scale_x_continuous('NND', 
                      breaks = seq(0,
                                   100,
@@ -630,7 +718,7 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
   scale_y_continuous('',
                      breaks = seq(-1, 3, 1),
                      limits = c(-1, 3.3)) +
-  scale_color_manual(values = c('red','blue')) 
+  scale_color_manual(values = c('red','blue'))
 
 ggdraw() +
   draw_plot(loc.lrr.mpd.plt, x = .1, y = .67,
@@ -648,31 +736,46 @@ ggdraw() +
   annotate('text', x = .03, y = .55,
            label = 'Effect Size of Competitor Removal', size = 7,
            angle = 90) +
-  annotate('text', x = .52, y = .97, label = 'A') +
-  annotate('text', x = .97, y = .97, label = 'B') +
-  annotate('text', x = .52, y = .65, label = 'C') +
-  annotate('text', x = .97, y = .65, label = 'D') +
-  annotate('text', x = .52, y = .3, label = 'E') +
-  annotate('text', x = .97, y = .3, label = 'F') +
+  annotate('text', x = .52, y = .97, 
+           label = 'A',
+           size = 5) +
+  annotate('text', x = .97, y = .97, label = 'B',
+           size = 5) +
+  annotate('text', x = .52, y = .65, label = 'C',
+           size = 5) +
+  annotate('text', x = .97, y = .65, label = 'D',
+           size = 5) +
+  annotate('text', x = .52, y = .3, label = 'E',
+           size = 5) +
+  annotate('text', x = .97, y = .3, label = 'F',
+           size = 5) +
   annotate('text', x = .10, y = .785, label = 'Local',
            size = 5) +
   annotate('text', x = .10, y = .46, label = 'Local',
            size = 5) + 
   annotate('text', x = .09, y = .115, label = 'Regional',
            size = 5) + 
-  annotate('text', x = .075, y = .97, label = 'MEPP Invasive',
+  annotate('text', x = .075, y = .97, label = 'Invasive',
            size = 5.5) +
   annotate('point', x = .01, y = .97, color = 'blue', alpha = 0.4) +
-  annotate('text', x = .069, y = .94, label = 'MEPP Exotic',
+  annotate('text', x = .069, y = .94, label = 'Exotic',
            size = 5.5) +
   annotate('point', x = .01, y = .94, color = 'red', alpha = 0.4)
 
-ggsave('LRR_Novelty_NoBiomass_Appendix.png',
+ggplot2::ggsave('LRR_Novelty_NoBiomass_Appendix.png',
+                path = '../Eco_Letters_Manuscript/Figures',
+                height = 8.5,
+                width = 12.5,
+                units = 'in',
+                dpi = 600)
+
+ggsave('Fig_S3_6.pdf',
        path = '../Eco_Letters_Manuscript/Figures',
-       height = 8.5,
-       width = 12.5,
+       height = 7,
+       width = 8,
        units = 'in',
        dpi = 600)
+
 
 
 # Test traits for ESCR ~ Trait relationship. Analyses retained in the script, but
@@ -832,6 +935,13 @@ ggdraw() +
            color = 'red', alpha = 0.4)
 
 ggsave(filename = 'R2_A_Conserved_Traits_Appendix.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 8,
+       width = 12.5,
+       units = 'in',
+       dpi = 600)
+
+ggsave(filename = 'Fig_S1_1.pdf',
        path = '../Eco_Letters_Manuscript/Figures',
        height = 8,
        width = 12.5,

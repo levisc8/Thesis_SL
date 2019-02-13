@@ -443,6 +443,15 @@ AWNND.Pred <- predict(logAWnndLM, data.frame(logAWNND = x,
   data.frame %>% 
   cbind(., x)
 
+plt.blank <- theme(panel.grid.major = element_blank(),
+                   panel.grid.minor = element_blank(),
+                   panel.background = element_rect(fill = NA,
+                                                   size = 1.25,
+                                                   color = 'black'),
+                   axis.title = element_text(size = 18),
+                   axis.line = element_line(size = 1.3),
+                   axis.text = element_text(size = 16))
+
 loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                           aes(x = Magnitude,
                               y = ESCR2)) +
@@ -534,10 +543,10 @@ loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
                      breaks = seq(-3,
                                   2,
                                   .8),
-                     limits = c(-3.1, 2)) +
+                     limits = c(-3.15, 2)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
-                     limits = c(-.5, 3.5)) +
+                     limits = c(-0.75, 3.5)) +
   scale_color_manual(values = c('red','blue')) +
   geom_hline(yintercept = 0, linetype = 'dotted',
              alpha = 0.5,
@@ -645,6 +654,13 @@ ggdraw() +
            size = 4)
 
 ggsave(filename = 'LRR_Regressions_Phylo_Only_For_Manuscript.png',
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 8.5,
+       width = 12.5,
+       units = 'in',
+       dpi = 600)
+
+ggsave(filename = "Manuscript_Figure_1.pdf",
        path = '../Eco_Letters_Manuscript/Figures',
        height = 8.5,
        width = 12.5,
@@ -800,6 +816,13 @@ ggdraw() +
 ggsave(filename = 'R2_A_For_Manuscript.png',
        path = '../Eco_Letters_Manuscript/Figures',
        height = 8,
+       width = 12.5,
+       units = 'in',
+       dpi = 600)
+
+ggsave(filename = "Manuscript_Figure_2.pdf",
+       path = '../Eco_Letters_Manuscript/Figures',
+       height = 8.5,
        width = 12.5,
        units = 'in',
        dpi = 600)
