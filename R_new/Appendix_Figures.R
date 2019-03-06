@@ -21,6 +21,8 @@ Richness <- communities %>% group_by(exotic_species) %>%
 Richness$Focal.Abundance <- NA
 Richness$Other.Abundance <- NA
 Richness$NN.Abundance <- NA
+Richness$NND <- NA
+Richness$MPD <- NA
 
 for(x in unique(Richness$Species)){
   focal.abund <- communities[communities$exotic_species == x &
@@ -39,6 +41,9 @@ for(x in unique(Richness$Species)){
     data.frame()
   
   diag(phy) <- NA
+  nnd <- min(phy[ ,x], na.rm = TRUE)
+  mpd <- mean(phy[ ,x], na.rm = TRUE)
+  
   nn <- which.min(phy[ ,x]) %>% 
     rownames(phy)[.]
   
@@ -51,7 +56,8 @@ for(x in unique(Richness$Species)){
   Richness[Richness$Species == x, 'Focal.Abundance'] <- focal.abund
   Richness[Richness$Species == x, 'Other.Abundance'] <- other.abund
   Richness[Richness$Species == x, 'NN.Abundance'] <- NN.abund
-  
+  Richness[Richness$Species == x, 'NND'] <- nnd
+  Richness[Richness$Species == x, 'MPD'] <- mpd
 }
 
 # see whether log or normal richness is better for model
@@ -91,7 +97,7 @@ ggsave('ESCR_by_Richness_Appendix.png',
        dpi = 600)
 
 ggsave('Fig_S3_1.pdf',
-       path = '../Eco_Letters_Manuscript/Figures',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
        height = 7,
        width = 8,
        units = 'in',
@@ -119,7 +125,7 @@ ggsave('CRBM_by_Richness_Appendix.png',
        dpi = 600)
 
 ggsave('Fig_S3_2.pdf',
-       path = '../Eco_Letters_Manuscript/Figures',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
        height = 7,
        width = 8,
        units = 'in',
@@ -148,7 +154,7 @@ ggsave('Richness_Focal_Abundance_Appendix.png',
        dpi = 600)
 
 ggsave('Fig_S3_3.pdf',
-       path = '../Eco_Letters_Manuscript/Figures',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
        height = 7,
        width = 8,
        units = 'in',
@@ -179,7 +185,7 @@ ggsave('All_Abundance_Focal_Abundance_Appendix.png',
        dpi = 600)
 
 ggsave('Fig_S3_4.pdf',
-       path = '../Eco_Letters_Manuscript/Figures',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
        height = 7,
        width = 8,
        units = 'in',
@@ -361,11 +367,12 @@ ggsave('ESCR_RawCRBM_Appendix.png',
        dpi = 600)
 
 ggsave('Fig_S3_5.pdf',
-       path = '../Eco_Letters_Manuscript/Figures',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
        height = 7,
        width = 8,
        units = 'in',
        dpi = 600)
+
 
 # Make Figures S3.6 (resids(lm(ESCR2~CRBM)) ~ novelty) and
 # S3.7 (ESCR2 ~ novelty, no biomass)
@@ -572,7 +579,7 @@ ggplot2::ggsave('Residuals_by_Novelty_LRR_Appendix.png',
                 dpi = 600)
 
 ggsave('Fig_S3_7.pdf',
-       path = '../Eco_Letters_Manuscript/Figures',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
        height = 7,
        width = 8,
        units = 'in',
@@ -770,7 +777,7 @@ ggplot2::ggsave('LRR_Novelty_NoBiomass_Appendix.png',
                 dpi = 600)
 
 ggsave('Fig_S3_6.pdf',
-       path = '../Eco_Letters_Manuscript/Figures',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
        height = 7,
        width = 8,
        units = 'in',
@@ -942,7 +949,7 @@ ggsave(filename = 'R2_A_Conserved_Traits_Appendix.png',
        dpi = 600)
 
 ggsave(filename = 'Fig_S1_1.pdf',
-       path = '../Eco_Letters_Manuscript/Figures',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
        height = 8,
        width = 12.5,
        units = 'in',
