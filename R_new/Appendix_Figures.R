@@ -956,3 +956,93 @@ ggsave(filename = 'Fig_S1_1.pdf',
        dpi = 600)
 
 
+
+# Trait Coverage ~ Habitat
+
+library(rlang)
+library(tidyr)
+
+# Remove native species from community
+natives <- c("Desmodium_perplexum", 
+             'Geum_vernum', 
+             "Symphoricarpos_orbiculatus",
+             "Teucrium_canadense")
+
+communities <- tyson$communities %>% filter(!exotic_species %in% natives)
+traits <- tyson$traits
+habs <- tyson$demo.data %>%
+  select(Species, Habitat)
+
+trait_com <- left_join(communities, traits, by = c("community" = "Species.Name"))
+
+# Create catch all for the dummy variables we created
+disp_traits <- c("Ballistic", "EndoZoochory", 
+                 'ExoZoochory', 'Hoarding', 
+                 "Myrmecochory", "Subterranean",
+                 "Unassisted", "Wind",
+                 "Water")
+grow_forms <- c("Elongated_Leafy_Rhizomatous",
+                "Rosette", "Shrub", "SubShrub",
+                "Stemmed_Herb", "Tree",
+                "Vine", "N_Fixer")
+
+# Join together everything and generate long form data for ggplot
+trait_hab_com <- left_join(trait_com, habs, by = c("exotic_species" = "Species")) %>%
+  gather(key = "Trait", value = 'value', -c(exotic_species:Invasive, Habitat)) %>%
+  mutate(trait_type = case_when(
+    Trait %in% disp_traits ~ "Dispersal",
+    Trait %in% grow_forms ~ "Growth_Form",
+    TRUE ~ Trait
+  ))
+
+trait_hab_com$trait_type <- gsub('\\.', '_', trait_hab_com$trait_type)
+trait_hab_com$trait_type <- gsub('WoodDens', 'Wood_Density', trait_hab_com$trait_type)
+
+# summary table for ggplot!
+sum_tib <- trait_hab_com %>%
+  group_by(trait_type, Habitat) %>%
+  summarise(
+    N = n(),
+    spp_cover = sum(!is.na(value))/N,
+    tot_cover = sum(percentcover, na.rm = TRUE),
+    cover = sum(percentcover[!is.na(value)], na.rm = TRUE)/tot_cover
+  )
+
+trait_tib <- sum_tib %>% 
+  group_by(trait_type) %>%
+  summarise(Average_Coverage = mean(cover))
+
+write.csv(trait_tib, 
+          file = '../Eco_Letters_Manuscript/SI/Figures/total_trait_coverage.csv',
+          row.names = FALSE)
+
+ggplot(sum_tib, aes(x = trait_type, y = cover)) + 
+  geom_jitter(aes(color = Habitat),
+              size = 3,
+              height = 0,
+              width = 0.1) +
+  theme_minimal() +
+  ylab("Proportion of community sampled") + 
+  xlab("Trait") + 
+  theme(
+    axis.text = element_text(size = 15),
+    axis.title.x = element_text(size = 19,
+                                margin = margin(t = 20,
+                                                r = 0,
+                                                l = 0,
+                                                b = 0)),
+    axis.title.y = element_text(size = 18,
+                                margin = margin(t = 0,
+                                                r = 20,
+                                                l = 5,
+                                                b = 0))
+    ) +
+  scale_y_continuous(breaks = seq(-0.25, 1.25, 0.25),
+                     limits = c(-0.02, 1.02))
+
+ggsave(filename = 'Trait_Habitat_coverage.png',
+       path = '../Eco_Letters_Manuscript/SI/Figures',
+       height = 9,
+       width = 16,
+       units = 'in',
+       dpi = 600)

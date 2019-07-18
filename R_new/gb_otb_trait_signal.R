@@ -1,7 +1,9 @@
+# Test for phylogenetic signal in traits using Smith & Brown trees
 # Compute phylogenetic signal for individual and whole suite of traits
 # I'll use Blomberg's K for continuous traits, D-test for binary traits 
 # (Fritz + Purvis 2010), and a 
 # phylogenetic Mantel Test for the whole suite (Hardy + Pavoine 2012). 
+
 
 library(FunPhylo)
 library(phytools)
@@ -11,7 +13,7 @@ library(ade4)
 library(dplyr)
 
 TraitData <- tyson$traits %>% filter(Species.Name != 'Cerastium_spp.')
-phylo <- tyson$phylo
+phylo <- tyson$phylo_gb
 
 TraitPhy <- drop.tip(phylo, setdiff(phylo$tip.label, TraitData$Species.Name))
 
@@ -82,12 +84,15 @@ source('R_new/SE_Phylo_D.R')
 
 class(binTraits) <- 'data.frame'
 
-for(i in names(binTraits)[-c(1)]){
- PhyD <- SE_phylo.d(binTraits, TraitPhy, "Species.Name", i)
- outData[outData$Trait == i, 'Value'] <- PhyD$DEstimate
- outData[outData$Trait == i, 'P_valB'] <- PhyD$Pval0
- outData[outData$Trait == i, 'P_valR'] <- PhyD$Pval1
- outData[outData$Trait == i, 'N'] <- sum(!is.na(binTraits[ ,i]))
+for(i in names(binTraits)[-c(1)]) {
+  PhyD <- SE_phylo.d(data = binTraits, 
+                     phy = TraitPhy, 
+                     names.col = "Species.Name",
+                     binvar = i)
+  outData[outData$Trait == i, 'Value'] <- PhyD$DEstimate
+  outData[outData$Trait == i, 'P_valB'] <- PhyD$Pval0
+  outData[outData$Trait == i, 'P_valR'] <- PhyD$Pval1
+  outData[outData$Trait == i, 'N'] <- sum(!is.na(binTraits[ ,i]))
 }
 
 
@@ -114,20 +119,20 @@ names(FlowerPeriodDist) <- rownames(FlowerPeriodDist)
 
 regTraitDist <- make_regional_trait_dist(TraitData,
                                          names(TraitData)[-c(1,5)]) %>%
-                as.matrix()
+  as.matrix()
 traitPhyDists <- cophenetic(TraitPhy) %>% sqrt
 
 regTraitDist <- regTraitDist[rownames(regTraitDist) %in% rownames(traitPhyDists),
                              colnames(regTraitDist) %in% colnames(traitPhyDists)] %>%
-                .[rownames(traitPhyDists), colnames(traitPhyDists)]
+  .[rownames(traitPhyDists), colnames(traitPhyDists)]
 
 FlowerPeriodDist <- FlowerPeriodDist[rownames(FlowerPeriodDist) %in% rownames(traitPhyDists),
-                             colnames(FlowerPeriodDist) %in% colnames(traitPhyDists)] %>%
+                                     colnames(FlowerPeriodDist) %in% colnames(traitPhyDists)] %>%
   .[rownames(traitPhyDists), colnames(traitPhyDists)]
 
 if(identical(rownames(regTraitDist), rownames(traitPhyDists)) &
    identical(colnames(regTraitDist), colnames(traitPhyDists))){
- 
+  
   allResult <- mantel(traitPhyDists, regTraitDist)
   outData[outData$Trait == 'All combined', 'Value'] <- allResult$statistic
   outData[outData$Trait == 'All combined', 'P_valB'] <- allResult$signif
@@ -165,7 +170,7 @@ add_stars <- function(x){
 outData$P_valB <- sapply(outData$P_valB, FUN = function(x) add_stars(x))
 outData$P_valR <- sapply(outData$P_valR, FUN = function(x) add_stars(x))
 
-write.csv(outData, 
-          file = '../Eco_Letters_Manuscript/Figures/Phylo_Signal_in_Functional_Traits.csv',
+write.csv(outData,
+          file = '../Eco_Letters_Manuscript/Figures/Phylo_Signal_in_Functional_Traits_GB_OTB.csv',
           na = "",
           row.names = FALSE)
