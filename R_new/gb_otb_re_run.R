@@ -30,7 +30,8 @@ demo.data <- tyson$demo.data
 
 # regional scale analysis-----------
 # create Tyson scale phylo distance matrix
-regionalTysonDists <- cophenetic(phylo) %>% data.frame()
+regionalTysonDists <- cophenetic(phylo) %>% sqrt()
+regionalTysonDists <- data.frame(regionalTysonDists)
 
 diag(regionalTysonDists) <- NA
 
@@ -51,13 +52,21 @@ exotics$Focal <- NA
 # so that focal species can be colored for plotting
 
 for(x in unique(exotics$Species)) {
-  exotics[exotics$Species == x, 'MPD'] <- mean(regionalTysonDists[ ,x],
+
+  spp_hab <- exotics$Habitat[exotics$Species == x]
+  
+  spp_hab_regex <- gsub('; ', '|', spp_hab)
+  
+  spp_hab_ind   <- spp.list$Species[grepl(spp_hab_regex, spp.list$Habitat)]
+  
+  exotics[exotics$Species == x, 'MPD'] <- mean(regionalTysonDists[spp_hab_ind ,x],
                                                na.rm = TRUE)
-  exotics[exotics$Species == x, 'NND'] <- min(regionalTysonDists[ ,x],
+  exotics[exotics$Species == x, 'NND'] <- min(regionalTysonDists[spp_hab_ind ,x],
                                               na.rm = TRUE)
   exotics[exotics$Species == x, 'Focal'] <- ifelse(x %in% demo.data$Species,
                                                    'Y', 
-                                                   'N')
+                                                   'N')  
+
 }
 
 
@@ -300,18 +309,21 @@ loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                           aes(x = Magnitude,
                               y = ESCR2)) +
   scale_x_continuous('MPD', 
-                     breaks = seq(150,
-                                  250,
-                                  20),
-                     limits = c(150, 250)) +
+                     breaks = seq(10,
+                                  16,
+                                  1.5),
+                     limits = c(9.9, 16.1)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-.5, 3.5)) +
   geom_point(alpha = .4, 
              aes(color = MEPPInv),
-             show.legend = FALSE,
              size = 4) + 
-  scale_color_manual(values = c('red','blue')) +
+  scale_color_manual(
+    name = 'Status',
+    labels = c("Naturalized", "Invasive"),
+    values = c('red','blue')
+  ) +
   geom_hline(yintercept = 0, linetype = 'dotted',
              alpha = 0.5,
              size = 2) +
@@ -331,9 +343,9 @@ loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
              size = 4) +
   scale_x_continuous('NND', 
                      breaks = seq(0,
-                                  240,
-                                  60),
-                     limits = c(0, 240)) +
+                                  16,
+                                  4),
+                     limits = c(0, 16)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-0.5, 3.5)) +
@@ -357,10 +369,10 @@ loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
              show.legend = FALSE,
              size = 4) +
   scale_x_continuous('log(abundance-weighted MPD)', 
-                     breaks = seq(4.8,
-                                  5.7,
-                                  0.2),
-                     limits = c(4.7, 5.7)) +
+                     breaks = seq(2.2,
+                                  2.9,
+                                  0.15),
+                     limits = c(2.2, 2.9)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-.5, 3.5)) +
@@ -384,10 +396,10 @@ loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
              show.legend = FALSE,
              size = 4) +
   scale_x_continuous('log(abundance-weighted NND)', 
-                     breaks = seq(-2.5,
-                                  2,
-                                  0.5),
-                     limits = c(-3, 2)) +
+                     breaks = seq(-5,
+                                  -0.5,
+                                  0.75),
+                     limits = c(-5, -0.5)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-0.75, 3.5)) +
@@ -411,10 +423,10 @@ reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
              show.legend = FALSE,
              size = 4) +
   scale_x_continuous('MPD', 
-                     breaks = seq(200,
-                                  250,
-                                  10),
-                     limits = c(200, 250)) +
+                     breaks = seq(13.5,
+                                  15.6,
+                                  0.7),
+                     limits = c(13.4, 15.7)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-.5, 3.5)) +
@@ -433,9 +445,9 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
              size = 4) +
   scale_x_continuous('NND', 
                      breaks = seq(0,
-                                  140,
-                                  20),
-                     limits = c(0, 140)) +
+                                  12,
+                                  2),
+                     limits = c(0, 12)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-.5, 3.5)) +
@@ -449,7 +461,10 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
 # Draw the plots and add axis labels where needed
 
 ggdraw() +
-  draw_plot(loc.lrr.mpd.plt, x = .1, y = .67,
+  draw_plot(loc.lrr.mpd.plt + 
+              theme(legend.position = 'top',
+                    legend.direction = 'horizontal'),
+            x = .1, y = .67,
             width = .45, height = .33) + 
   draw_plot(loc.lrr.nnd.plt, x = .55, y = .67,
             width = .45, height = .33) +
@@ -464,8 +479,8 @@ ggdraw() +
   annotate('text', x = .03, y = .55,
            label = 'Effect size of competition', size = 6,
            angle = 90) +
-  annotate('text', x = .52, y = .97,
-           label = 'A', size = 5) +
+  annotate('text', x = .52, y = .95,
+           label = 'A', size = 5.5) +
   annotate('text', x = .97, y = .97,
            label = 'B', size = 5) +
   annotate('text', x = .52, y = .65, 
@@ -484,18 +499,7 @@ ggdraw() +
            size = 5) + 
   annotate('text', x = .09, y = .115, 
            label = 'Regional',
-           size = 5) + 
-  annotate('text', x = .0675, y = .97, 
-           label = 'Invasive',
-           size = 5) +
-  annotate('point', x = .013, y = .97, color = 'blue', 
-           alpha = 0.4, size = 4) +
-  annotate('text', x = .06, y = .95, 
-           label = 'Exotic',
-           size = 5) +
-  annotate('point', x = .013, y = .95,
-           color = 'red', alpha = 0.4,
-           size = 4)
+           size = 5)
 
 ggsave(filename = 'LRR_Regressions_gb_OTB_Only_For_Manuscript.png',
        path = '../Eco_Letters_Manuscript/Figures',

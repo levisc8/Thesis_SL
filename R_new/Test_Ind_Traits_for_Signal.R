@@ -82,7 +82,7 @@ source('R_new/SE_Phylo_D.R')
 
 class(binTraits) <- 'data.frame'
 
-for(i in names(binTraits)[-c(1)]){
+for(i in names(binTraits)[-c(1)]) {
  PhyD <- SE_phylo.d(binTraits, TraitPhy, "Species.Name", i)
  outData[outData$Trait == i, 'Value'] <- PhyD$DEstimate
  outData[outData$Trait == i, 'P_valB'] <- PhyD$Pval0
@@ -115,6 +115,7 @@ names(FlowerPeriodDist) <- rownames(FlowerPeriodDist)
 regTraitDist <- make_regional_trait_dist(TraitData,
                                          names(TraitData)[-c(1,5)]) %>%
                 as.matrix()
+
 traitPhyDists <- cophenetic(TraitPhy) %>% sqrt
 
 regTraitDist <- regTraitDist[rownames(regTraitDist) %in% rownames(traitPhyDists),

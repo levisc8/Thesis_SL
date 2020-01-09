@@ -1,5 +1,3 @@
-# Re-run analyses with Smith Trees to see if any difference is made
-
 # Script to produce all of the analyses and figures in the main text of the paper.
 
 library(FunPhylo)
@@ -16,6 +14,7 @@ data(tyson)
 # do a little data munging and variable conversion
 
 spp.list <- tyson$spp.list
+
 for(i in 2:4){
   spp.list[ ,i] <- as.numeric(spp.list[ ,i])
 }
@@ -24,7 +23,7 @@ for(i in 2:4){
 # it in the data set to be distributed because someone else might find it
 # useful.
 
-phylo <- tyson$phylo_all
+phylo <- tyson$phylo
 communities <- tyson$communities %>% filter(community != 'Allium_vineale')
 demo.data <- tyson$demo.data
 
@@ -49,7 +48,7 @@ exotics$Focal <- NA
 # extract mpd and nnd for all exotics. THis also creates a "Focal" dummy variable
 # so that focal species can be colored for plotting
 
-for(x in unique(exotics$Species)) { 
+for(x in unique(exotics$Species)) {
   
   spp_hab <- exotics$Habitat[exotics$Species == x]
   
@@ -158,6 +157,10 @@ demo.data$logAWMPD <- log(demo.data$AWMPD)
 demo.data$logAWNND <- log(demo.data$AWNND)
 
 
+# Leave out kummerowia mpd and nnd to test generality of results
+
+demo.data <- filter(demo.data, Species != 'Kummerowia_striata')
+
 # local ESCR regressions-------------
 mpdLM <- lm(ESCR2 ~ MPD + CRBM, data = demo.data)
 nndLM <- lm(ESCR2 ~ NND + CRBM, data = demo.data)
@@ -233,7 +236,7 @@ modelTable$p.value <- lapply(modelTable$p.value,
                              FUN = function (x) add_stars(x)) %>% unlist()
 
 #  write table to csv so we can include in paper
-write.csv(modelTable, '../Eco_Letters_Manuscript/Figures/Phylo_models_output_all_OTB.csv', 
+write.csv(modelTable, '../Eco_Letters_Manuscript/Figures/Phylo_models_output_minus_kstra.csv', 
           na = "",
           row.names = FALSE)
 
@@ -302,9 +305,9 @@ loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                               y = ESCR2)) +
   scale_x_continuous('MPD', 
                      breaks = seq(10,
-                                  16,
+                                  16.5,
                                   1.5),
-                     limits = c(9.9, 16.1)) +
+                     limits = c(9.9, 16.5)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-.5, 3.5)) +
@@ -436,10 +439,10 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
              show.legend = FALSE,
              size = 4) +
   scale_x_continuous('NND', 
-                     breaks = seq(0,
-                                  12,
+                     breaks = seq(1,
+                                  11,
                                   2),
-                     limits = c(0, 12)) +
+                     limits = c(1, 11)) +
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-.5, 3.5)) +
@@ -451,6 +454,7 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
   plt.blank
 
 # Draw the plots and add axis labels where needed
+
 
 ggdraw() +
   draw_plot(loc.lrr.mpd.plt + 
@@ -493,15 +497,14 @@ ggdraw() +
            label = 'Regional',
            size = 5)
 
-
-ggsave(filename = 'LRR_Regressions_Phylo_Only_all_OTB_For_Manuscript.png',
+ggsave(filename = 'LRR_Regressions_Phylo_Only_minus_kstra.png',
        path = '../Eco_Letters_Manuscript/Figures',
        height = 8.5,
        width = 12.5,
        units = 'in',
        dpi = 600)
 
-ggsave(filename = "Figure_1_all_OTB.pdf",
+ggsave(filename = "Figure_1_minus_kstra.pdf",
        path = '../Eco_Letters_Manuscript/Figures',
        height = 8.5,
        width = 12.5,
@@ -609,7 +612,9 @@ Fig <- ggplot(data = R2dat, aes(x = A)) +
             show.legend = FALSE,
             size = 1.25) +
   scale_x_continuous('', limits = c(0,1)) +
-  scale_y_continuous('', limits = c(0,1)) + 
+  scale_y_continuous('', 
+                     breaks = seq(0, 1, by = 0.25),
+                     limits = c(-0.1,1)) + 
   scale_color_manual('',
                      values = c("red", "blue")) + 
   annotate('text',
@@ -653,14 +658,14 @@ ggdraw() +
   annotate('point', x = 0.04, y = 0.89, 
            color = 'red', alpha = 0.4)
 
-ggsave(filename = 'R2_A_all_OTB_For_Manuscript.png',
+ggsave(filename = 'R2_A_minus_kstra.png',
        path = '../Eco_Letters_Manuscript/Figures',
        height = 8,
        width = 12.5,
        units = 'in',
        dpi = 600)
 
-ggsave(filename = "Figure_2_all_OTB.pdf",
+ggsave(filename = "Figure_2_minus_kstra.pdf",
        path = '../Eco_Letters_Manuscript/Figures',
        height = 8.5,
        width = 12.5,
