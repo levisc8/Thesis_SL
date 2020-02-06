@@ -352,7 +352,7 @@ summary(RESRegNNDLM)
 
 demo.data$MEPPInv <- ifelse(demo.data$MEPPInv == 1,
                             "Invasive",
-                            "Naturalized")
+                            "Non-invasive")
 # Plot ESCR ~ RawCRBM
 Fig6 <- ggplot(demo.data, aes(x = RawCRBM, y = ESCR)) +
   def_plot + 
@@ -360,7 +360,7 @@ Fig6 <- ggplot(demo.data, aes(x = RawCRBM, y = ESCR)) +
              size = 3,
              alpha = 0.4) +
   scale_color_manual('',
-                     breaks = c('Invasive', 'Naturalized'),
+                     breaks = c('Invasive', 'Non-invasive'),
                      values = c('red','blue')) +
   scale_x_continuous('Raw competitor biomass') +
   scale_y_continuous('Effect size of competition') + 
@@ -397,6 +397,14 @@ forPlot <- gather(demo.data, Metric, Magnitude, MPD:logAWNND) %>%
   filter(!Metric %in% bad.mets )
 # forPlot$MEPPInv <- ifelse(forPlot$MEPPInv == 1, 'Y', 'N')
 
+plt.blank <- theme(panel.grid.major = element_blank(),
+                   panel.grid.minor = element_blank(),
+                   panel.background = element_rect(fill = NA,
+                                                   size = 1.25,
+                                                   color = 'black'),
+                   axis.title = element_text(size = 18),
+                   axis.line = element_line(size = 1.3),
+                   axis.text = element_text(size = 16))
 
 loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                           aes(x = Magnitude,
@@ -423,12 +431,13 @@ loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                      limits = c(-1.1, 2)) +
   scale_color_manual(
     name = 'Status',
-    labels = c("Naturalized", "Invasive"),
+    labels = c("Non-invasive", "Invasive"),
     values = c('red','blue')
   ) +
   geom_hline(yintercept = 0, linetype = 'dotted',
              alpha = 0.5,
-             size = 2) 
+             size = 2) +
+  plt.blank
 
 
 loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
@@ -453,7 +462,8 @@ loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
   scale_y_continuous('',
                      breaks = seq(-1, 2, 1),
                      limits = c(-1.1, 2)) +
-  scale_color_manual(values = c('red','blue'))
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 
 loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
@@ -478,7 +488,8 @@ loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
   scale_y_continuous('',
                      breaks = seq(-1, 2, 1),
                      limits = c(-1.1, 2.3)) +
-  scale_color_manual(values = c('red','blue'))
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
                              aes(x = Magnitude, y = AsymResids)) + 
@@ -502,7 +513,8 @@ loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
   scale_y_continuous('',
                      breaks = seq(-1, 2, 1),
                      limits = c(-1.1, 2.3)) +
-  scale_color_manual(values = c('red','blue'))
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 
 
@@ -523,7 +535,8 @@ reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
   scale_y_continuous('',
                      breaks = seq(-1, 2, 1),
                      limits = c(-1.1, 2.3)) +
-  scale_color_manual(values = c('red','blue'))
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 
 reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
@@ -543,7 +556,8 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
   scale_y_continuous('',
                      breaks = seq(-1, 2, 1),
                      limits = c(-1.1, 2.3)) +
-  scale_color_manual(values = c('red','blue')) 
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 # create blank canvas and get to drawing!
 
@@ -632,12 +646,13 @@ loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                      limits = c(-0.5, 3.5)) +
   scale_color_manual(
     name = 'Status',
-    labels = c("Naturalized", "Invasive"),
+    labels = c("Non-invasive", "Invasive"),
     values = c('red','blue')
   ) +
   geom_hline(yintercept = 0, linetype = 'dotted',
              alpha = 0.5,
-             size = 2) 
+             size = 2) +
+  plt.blank 
 
 
 loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
@@ -662,7 +677,8 @@ loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-0.5, 3.5)) +
-  scale_color_manual(values = c('red','blue'))
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 
 loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
@@ -687,7 +703,8 @@ loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-0.5, 3.5)) +
-  scale_color_manual(values = c('red','blue'))
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
                              aes(x = Magnitude, y = ESCR)) + 
@@ -711,7 +728,8 @@ loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-0.5, 3.5)) +
-  scale_color_manual(values = c('red','blue'))
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 
 
@@ -732,7 +750,8 @@ reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-0.5, 3.5)) +
-  scale_color_manual(values = c('red','blue'))
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 
 reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
@@ -752,7 +771,8 @@ reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
   scale_y_continuous('',
                      breaks = seq(0, 3.5, 1),
                      limits = c(-0.5, 3.5)) +
-  scale_color_manual(values = c('red','blue')) 
+  scale_color_manual(values = c('red','blue')) +
+  plt.blank
 
 ggdraw() +
   draw_plot(loc.lrr.mpd.plt + 
@@ -933,7 +953,19 @@ Fig <- ggplot(data = R2dat, aes(x = A)) +
            x = .85, y = .9) +
   annotate('text', 
            label = paste0('Best Performing Metric: ', maxr2met),
-           x = .85, y = .85)
+           x = .85, y = .85) +
+  theme(
+    panel.background = element_rect(fill = NA,
+                                    color = 'black',
+                                    size = 2),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x      = element_text(size = 16,
+                                    vjust = -0.1),
+    axis.text.y      = element_text(size = 16,
+                                    hjust = -0.1)
+  )
+
 
 ggdraw() +
   draw_plot(Fig,
@@ -1368,7 +1400,7 @@ for(i in seq_along(all_combos)) {
                size = 4) + 
     scale_color_manual(
       name = 'Status',
-      labels = c("Naturalized", "Invasive"),
+      labels = c("Non-invasive", "Invasive"),
       values = c('red','blue')
     ) +
     geom_hline(yintercept = 0, linetype = 'dotted',
@@ -1403,7 +1435,7 @@ for(i in seq_along(all_combos)) {
                show.legend = FALSE) + 
     scale_color_manual(
       name = 'Status',
-      labels = c("Naturalized", "Invasive"),
+      labels = c("Non-invasive", "Invasive"),
       values = c('red','blue')
     ) +
     geom_hline(yintercept = 0, linetype = 'dotted',
@@ -1441,7 +1473,7 @@ for(i in seq_along(all_combos)) {
                show.legend = FALSE) + 
     scale_color_manual(
       name = 'Status',
-      labels = c("Naturalized", "Invasive"),
+      labels = c("Non-invasive", "Invasive"),
       values = c('red','blue')
     ) +
     geom_hline(yintercept = 0, linetype = 'dotted',
@@ -1475,7 +1507,7 @@ for(i in seq_along(all_combos)) {
                show.legend = FALSE) + 
     scale_color_manual(
       name = 'Status',
-      labels = c("Naturalized", "Invasive"),
+      labels = c("Non-invasive", "Invasive"),
       values = c('red','blue')
     ) +
     geom_hline(yintercept = 0, linetype = 'dotted',
@@ -1511,7 +1543,7 @@ for(i in seq_along(all_combos)) {
                show.legend = FALSE) + 
     scale_color_manual(
       name = 'Status',
-      labels = c("Naturalized", "Invasive"),
+      labels = c("Non-invasive", "Invasive"),
       values = c('red','blue')
     ) +
     geom_hline(yintercept = 0, linetype = 'dotted',
@@ -1546,7 +1578,7 @@ for(i in seq_along(all_combos)) {
                show.legend = FALSE) + 
     scale_color_manual(
       name = 'Status',
-      labels = c("Naturalized", "Invasive"),
+      labels = c("Non-invasive", "Invasive"),
       values = c('red','blue')
     ) +
     geom_hline(yintercept = 0, linetype = 'dotted',

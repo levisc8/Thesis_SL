@@ -316,7 +316,7 @@ loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
              size = 4) + 
   scale_color_manual(
     name = 'Status',
-    labels = c("Naturalized", "Invasive"),
+    labels = c("Non-invasive", "Invasive"),
     values = c('red','blue')
   ) +
   geom_hline(yintercept = 0, linetype = 'dotted',
@@ -625,7 +625,19 @@ Fig <- ggplot(data = R2dat, aes(x = A)) +
            x = .85, y = .9) +
   annotate('text', 
            label = paste0('Best Performing Metric: ', maxr2met),
-           x = .85, y = .85)
+           x = .85, y = .85) +
+  theme(
+    panel.background = element_rect(fill = NA,
+                                    color = 'black',
+                                    size = 2),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x      = element_text(size = 16,
+                                    vjust = -0.1),
+    axis.text.y      = element_text(size = 16,
+                                    hjust = -0.1)
+  )
+
 
 ggdraw() +
   draw_plot(Fig,
