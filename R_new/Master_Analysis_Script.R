@@ -188,12 +188,12 @@ demo.data$logAWMPD <- log(demo.data$AWMPD)
 demo.data$logAWNND <- log(demo.data$AWNND)
 
 # local ESCR regressions-------------
-# mpdLM <- lm(ESCR2 ~ MPD + CRBM, data = demo.data)
-# nndLM <- lm(ESCR2 ~ NND + CRBM, data = demo.data)
-# logAWmpdLM <- lm(ESCR2 ~ logAWMPD + CRBM, data = demo.data)
-# logAWnndLM <- lm(ESCR2 ~ logAWNND + CRBM, data = demo.data)
-# RegMPDLM <- lm(ESCR2 ~ Regional_MPD + CRBM, data = demo.data)
-# RegNNDLM <- lm(ESCR2 ~ Regional_NND + CRBM, data = demo.data)
+# mpdLM <- lm(ESCR ~ MPD + CRBM, data = demo.data)
+# nndLM <- lm(ESCR ~ NND + CRBM, data = demo.data)
+# logAWmpdLM <- lm(ESCR ~ logAWMPD + CRBM, data = demo.data)
+# logAWnndLM <- lm(ESCR ~ logAWNND + CRBM, data = demo.data)
+# RegMPDLM <- lm(ESCR ~ Regional_MPD + CRBM, data = demo.data)
+# RegNNDLM <- lm(ESCR ~ Regional_NND + CRBM, data = demo.data)
 
 # Use raw effect sizes as suggested by reviewer 1
 
@@ -348,7 +348,7 @@ plt.blank <- theme(panel.grid.major = element_blank(),
 
 loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
                           aes(x = Magnitude,
-                              y = ESCR2)) +
+                              y = ESCR)) +
   scale_x_continuous('MPD', 
                      breaks = seq(10,
                                   16,
@@ -377,7 +377,7 @@ loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
   plt.blank
 
 loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
-                          aes(x = Magnitude, y = ESCR2)) +
+                          aes(x = Magnitude, y = ESCR)) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
              show.legend = FALSE,
@@ -404,7 +404,7 @@ loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
 
 
 loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
-                             aes(x = Magnitude, y = ESCR2)) +
+                             aes(x = Magnitude, y = ESCR)) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
              show.legend = FALSE,
@@ -431,7 +431,7 @@ loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
 
 
 loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
-                             aes(x = Magnitude, y = ESCR2)) +
+                             aes(x = Magnitude, y = ESCR)) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
              show.legend = FALSE,
@@ -458,7 +458,7 @@ loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
 
 
 reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
-                          aes(x = Magnitude, y = ESCR2)) +
+                          aes(x = Magnitude, y = ESCR)) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
              show.legend = FALSE,
@@ -479,7 +479,7 @@ reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
 
 
 reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
-                          aes(x = Magnitude, y = ESCR2)) +
+                          aes(x = Magnitude, y = ESCR)) +
   geom_point(aes(color = MEPPInv),
              alpha = .4,
              show.legend = FALSE,
@@ -566,7 +566,7 @@ ggsave(filename = "Figure_2.pdf",
 # and leaf toughness with an a-value of 0.3-0.4 (best a's vary due to rarefying, 
 # but the max R^2 is always ~0.8 and it's always in this range). 
 
-demo.data <- arrange(demo.data, desc(ESCR2))
+demo.data <- arrange(demo.data, desc(ESCR))
 
 traits <- c('Height', 'SLA', 'Tough', 'Flower.Period')
 trait.data <- tyson$traits
