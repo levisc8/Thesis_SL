@@ -22,12 +22,8 @@ for(i in 2:4) {
   spp.list[ ,i] <- as.numeric(spp.list[ ,i])
 }
 
-# remove allium vineale since it's a monocot. However, I wanted to keep
-# it in the data set to be distributed because someone else might find it
-# useful.
-
 phylo <- tyson$phylo
-communities <- tyson$communities %>% filter(community != 'Allium_vineale')
+communities <- tyson$communities
 demo.data <- tyson$demo.data
 
 # Get habitat info for every species in the community data set
@@ -101,21 +97,22 @@ for(x in unique(exotics$Species)) {
 # phylogenetic only to start
 # trait * phylogeny comes later
 
-communities$MPD.Local <- NA
-communities$NND.Local <- NA
+communities$MPD.Local <- NA_real_
+communities$NND.Local <- NA_real_
 
 All.Local.exotics <- subset(communities, exotic_species == '') %>%
-  mutate(Focal = NA)
+  mutate(Focal = NA_real_)
 
-demo.data$MEPPInv <- NA
-demo.data$MPD <- NA
-demo.data$NND <- NA
-demo.data$AWMPD <- NA
-demo.data$AWNND <- NA
-demo.data$Regional_MPD <- NA
-demo.data$Regional_NND <- NA
+demo.data$MEPPInv <- NA_real_
+demo.data$MPD <- NA_real_
+demo.data$NND <- NA_real_
+demo.data$AWMPD <- NA_real_
+demo.data$AWNND <- NA_real_
+demo.data$Regional_MPD <- NA_real_
+demo.data$Regional_NND <- NA_real_
 
 for(x in unique(demo.data$Species)) {
+  
   cat('Crunching data for species: ', x, '\n')
   
   # make local phylo and functional distance matrices. The functional
@@ -195,25 +192,33 @@ demo.data$logAWNND <- log(demo.data$AWNND)
 # RegMPDLM <- lm(ESCR ~ Regional_MPD + CRBM, data = demo.data)
 # RegNNDLM <- lm(ESCR ~ Regional_NND + CRBM, data = demo.data)
 
-# Use raw effect sizes as suggested by reviewer 1
+# Use raw effect sizes + variances as suggested by reviewer 1
+
+demo.data$use_var <- demo.data$var_escr / sum(demo.data$var_escr)
 
 mpdLM <- lm(ESCR ~ MPD + CRBM, 
-            data = demo.data)
+            data = demo.data,
+            weights = 1/use_var)
 
 nndLM <- lm(ESCR ~ NND + CRBM, 
-            data = demo.data)
+            data = demo.data,
+            weights = 1 / use_var)
 
 logAWmpdLM <- lm(ESCR ~ logAWMPD + CRBM, 
-                 data = demo.data)
+                 data = demo.data,
+                 weights = 1 / use_var)
 
 logAWnndLM <- lm(ESCR ~ logAWNND + CRBM, 
-                 data = demo.data)
+                 data = demo.data,
+                 weights = 1 / use_var)
 
 RegMPDLM <- lm(ESCR ~ Regional_MPD + CRBM, 
-               data = demo.data)
+               data = demo.data,
+               weights = 1 / use_var)
 
 RegNNDLM <- lm(ESCR ~ Regional_NND + CRBM, 
-               data = demo.data)
+               data = demo.data,
+               weights = 1 / use_var)
 
 
 message('standardized biomass')
