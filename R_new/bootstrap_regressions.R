@@ -4,8 +4,6 @@ library(FunPhylo)
 library(pez)
 library(dplyr)
 library(ggplot2)
-library(ggthemes)
-library(cowplot)
 library(tidyr)
 library(stringr)
 library(grid)
@@ -214,12 +212,19 @@ escr_reg <- function(demo_data, novelty_data, iteration) {
   
   reg_data <- cbind(escr, novelty_data)
   
-  betas_mpd    <- coef(lm(escr ~ MPD + CRBM, data = reg_data))
-  betas_nnd    <- coef(lm(escr ~ NND + CRBM, data = reg_data))
-  betas_awmpd  <- coef(lm(escr ~ logAWMPD + CRBM, data = reg_data))
-  betas_awnnd  <- coef(lm(escr ~ logAWNND + CRBM, data = reg_data))
-  betas_re_mpd <- coef(lm(escr ~ Regional_MPD + CRBM, data = reg_data))
-  betas_re_nnd <- coef(lm(escr ~ Regional_NND + CRBM, data = reg_data))
+  model_mpd    <- lm(escr ~ MPD + CRBM, data = reg_data)
+  model_nnd    <- lm(escr ~ NND + CRBM, data = reg_data)
+  model_awmpd  <- lm(escr ~ logAWMPD + CRBM, data = reg_data)
+  model_awnnd  <- lm(escr ~ logAWNND + CRBM, data = reg_data)
+  model_re_mpd <- lm(escr ~ Regional_MPD + CRBM, data = reg_data)
+  model_re_nnd <- lm(escr ~ Regional_NND + CRBM, data = reg_data)
+  
+  betas_mpd    <- c(coef(model_mpd), summary(model_mpd)$adj.r.squared)
+  betas_nnd    <- c(coef(model_nnd), summary(model_nnd)$adj.r.squared)
+  betas_awmpd  <- c(coef(model_awmpd), summary(model_awmpd)$adj.r.squared)
+  betas_awnnd  <- c(coef(model_awnnd), summary(model_awnnd)$adj.r.squared)
+  betas_re_mpd <- c(coef(model_re_mpd), summary(model_re_mpd)$adj.r.squared)
+  betas_re_nnd <- c(coef(model_re_nnd), summary(model_re_nnd)$adj.r.squared)
   
   out <- list(mpd = betas_mpd,
               nnd = betas_nnd,
@@ -239,32 +244,38 @@ output <- list(
   mpd = data.frame(int = numeric(1001L),
                    nov = numeric(1001L),
                    bio = numeric(1001L),
-                   met = "MPD",
+                   r2  = numeric(1001L),
+                   met = "Small Grain MPD",
                    stringsAsFactors = FALSE),
   nnd = data.frame(int = numeric(1001L),
                    nov = numeric(1001L),
                    bio = numeric(1001L),
-                   met = "NND",
+                   r2  = numeric(1001L),
+                   met = "Small Grain NND",
                    stringsAsFactors = FALSE),
   awmpd = data.frame(int = numeric(1001L),
                      nov = numeric(1001L),
                      bio = numeric(1001L),
-                     met = "AW-MPD",
+                     r2  = numeric(1001L),
+                     met = "Small Grain AW-MPD",
                      stringsAsFactors = FALSE),
   awnnd = data.frame(int = numeric(1001L),
                      nov = numeric(1001L),
                      bio = numeric(1001L),
-                     met = "AW-NND",
+                     r2  = numeric(1001L),
+                     met = "Small Grain AW-NND",
                      stringsAsFactors = FALSE),
   reg_mpd = data.frame(int = numeric(1001L),
                        nov = numeric(1001L),
                        bio = numeric(1001L),
-                       met = "Regional MPD",
+                       r2  = numeric(1001L),
+                       met = "Large Grain MPD",
                        stringsAsFactors = FALSE),
   reg_nnd = data.frame(int = numeric(1001L),
                        nov = numeric(1001L),
                        bio = numeric(1001L),
-                       met = "Regional NND",
+                       r2  = numeric(1001L),
+                       met = "Large Grain NND",
                        stringsAsFactors = FALSE)
 )
 
@@ -272,33 +283,31 @@ for(i in 1:1001) {
   
   temp_betas <- escr_reg(all_lams, nov_data, i)
   
-  output$mpd[i, 1:3] <- temp_betas$mpd
-  output$nnd[i, 1:3] <- temp_betas$nnd
-  output$awmpd[i, 1:3] <- temp_betas$awmpd
-  output$awnnd[i, 1:3] <- temp_betas$awnnd
-  output$reg_mpd[i, 1:3] <- temp_betas$reg_mpd
-  output$reg_nnd[i, 1:3] <- temp_betas$reg_nnd
+  output$mpd[i, 1:4] <- temp_betas$mpd
+  output$nnd[i, 1:4] <- temp_betas$nnd
+  output$awmpd[i, 1:4] <- temp_betas$awmpd
+  output$awnnd[i, 1:4] <- temp_betas$awnnd
+  output$reg_mpd[i, 1:4] <- temp_betas$reg_mpd
+  output$reg_nnd[i, 1:4] <- temp_betas$reg_nnd
   
 }
 
 for_plot <- do.call("rbind", output)
 
-ggplot(for_plot, aes(x = nov)) + 
-  geom_histogram() +
-  facet_wrap(~met, scales = "free_x") + 
-  geom_vline(xintercept = 0,
-             color = 'red') +
-  theme_bw()
-
-ggsave(filename = "../Eco_Letters_Manuscript/Figures/Figure_2_hist.png")
-
 reg_fig_data <- lapply(output,
                        function(x) { 
-                         obs <- t(x[1, 1:3]) %>%
+
+                         obs <- t(x[1, 1:4]) %>%
                            as.data.frame()
                          sorting <- x[2:1001, 1:3]
                          to_bind <- sorting[order(sorting$nov), ]
                          to_bind <- t(to_bind[c(25, 975), 1:3])
+                         
+                         sorting_r2 <- x[2:1001, 4]
+                         r2_bind <- sorting_r2[order(sorting_r2)]
+                         r2_bind <- t(r2_bind[c(25, 975)])
+                         
+                         to_bind <- rbind(to_bind, r2_bind)
                          
                          out <- data.frame(to_bind) %>%
                          cbind(obs, .) %>%
@@ -307,10 +316,12 @@ reg_fig_data <- lapply(output,
                            ) %>%
                            mutate(Coefficient = factor(c("Intercept",
                                                          "Distinctiveness",
-                                                         "Biomass"),
+                                                         "Biomass",
+                                                         "paste(R[adj]^2)"),
                                                        levels = c("Intercept",
                                                                   "Distinctiveness",
-                                                                  "Biomass"),
+                                                                  "Biomass",
+                                                                  "paste(R[adj]^2)"),
                                                        ordered = TRUE))
                          
                          return(out)
@@ -318,27 +329,42 @@ reg_fig_data <- lapply(output,
                        }) %>%
   do.call("rbind", args = .) %>%
   mutate(Metric = c(
-    rep("MPD", 3),
-    rep("NND", 3),
-    rep("AW-MPD", 3),
-    rep("AW-NND", 3),
-    rep("Regional MPD", 3),
-    rep("Regional NND", 3)
-  ))
+    rep("Small Grain MPD", 4),
+    rep("Small Grain NND", 4),
+    rep("Small Grain AW-MPD", 4),
+    rep("Small Grain AW-NND", 4),
+    rep("Large Grain MPD", 4),
+    rep("Large Grain NND", 4)
+  )) %>%
+  filter(! Coefficient %in% c("Intercept", "Biomass"))
 
+r2s   <- filter(reg_fig_data, Coefficient != "Distinctiveness")
 
-
-
-ggplot(reg_fig_data, aes(x = Coefficient, y = Value)) +
-  facet_wrap(~Metric,
-             scales = 'free_y') + 
-  geom_point(size = 2) +
-  geom_linerange(aes(ymin = Lo_CI,
-                     ymax = Up_CI),
-                 size = 1.25) + 
+beta_hists <- ggplot(for_plot, aes(x = nov)) +
+  geom_histogram() +
+  facet_wrap(~met,
+             scales = "free_x",
+             nrow = 3,
+             ncol = 2) + 
   theme_bw() +
-  geom_hline(yintercept = 0, color = 'red') 
+  geom_vline(xintercept = 0, color = 'red')  + 
+  labs(x = "",
+       y = "Frequency") + 
+  theme(strip.text = element_text(size = 14),
+        strip.background = element_blank())
 
-ggsave(filename = "../Eco_Letters_Manuscript/Figures/Figure_2_coef_barplot.png")
+r2_plot <- ggplot(r2s, aes(x = Metric, y = Value)) +
+  geom_point(size = 2) +
+  geom_linerange(aes(ymin = Lo_CI, ymax = Up_CI), size = 1.25) +
+  theme_bw() +
+  scale_y_continuous(limits = c(-0.05, 1.05)) +
+  coord_flip() +
+  labs(x = "",
+       y = expression(paste(R[adj]^2)))
+
+grid.arrange(beta_hists, r2_plot, nrow = 1, ncol = 2)
+
+
+ggsave(filename = "../Eco_Letters_Manuscript/Figures/Figure_2_hist_plus_barplot.png")
 
 

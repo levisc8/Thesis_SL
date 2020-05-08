@@ -4,7 +4,6 @@ library(FunPhylo)
 library(pez)
 library(dplyr)
 library(ggplot2)
-library(ggthemes)
 library(cowplot)
 library(tidyr)
 library(stringr)
@@ -76,16 +75,10 @@ exotics$Focal <- NA
 # so that focal species can be colored for plotting
 
 for(x in unique(exotics$Species)) {
-  
-  spp_hab <- exotics$Habitat[exotics$Species == x]
-  
-  spp_hab_regex <- gsub('; ', '|', spp_hab)
-  
-  spp_hab_ind   <- spp.list$Species[grepl(spp_hab_regex, spp.list$Habitat)]
-  
-  exotics[exotics$Species == x, 'MPD'] <- mean(regionalTysonDists[spp_hab_ind ,x],
+
+  exotics[exotics$Species == x, 'MPD'] <- mean(regionalTysonDists[ , x],
                                                na.rm = TRUE)
-  exotics[exotics$Species == x, 'NND'] <- min(regionalTysonDists[spp_hab_ind ,x],
+  exotics[exotics$Species == x, 'NND'] <- min(regionalTysonDists[ , x],
                                               na.rm = TRUE)
   exotics[exotics$Species == x, 'Focal'] <- ifelse(x %in% demo.data$Species,
                                                    'Y', 
@@ -97,11 +90,6 @@ for(x in unique(exotics$Species)) {
 # phylogenetic only to start
 # trait * phylogeny comes later
 
-communities$MPD.Local <- NA_real_
-communities$NND.Local <- NA_real_
-
-All.Local.exotics <- subset(communities, exotic_species == '') %>%
-  mutate(Focal = NA_real_)
 
 demo.data$MEPPInv <- NA_real_
 demo.data$MPD <- NA_real_
@@ -125,10 +113,6 @@ for(x in unique(demo.data$Species)) {
                                                                'MPD']
   demo.data[demo.data$Species == x, 'Regional_NND'] <- exotics[exotics$Species == x,
                                                                'NND']
-  
-  local.exotics <- filter(communities, exotic_species == x &
-                            alien == 1)
-  
   phyloMat <- make_local_phylo_dist(x, communities, phylo)
   funMat <- make_local_trait_dist(x, communities, 
                                   trait.data = tyson$traits,
@@ -138,16 +122,6 @@ for(x in unique(demo.data$Species)) {
   Loc.Mat <- phyloMat
   diag(Loc.Mat) <- NA  
   
-  for(y in unique(local.exotics$community)){
-    local.exotics[local.exotics$community == y,
-                  'MPD.Local'] <- mean(Loc.Mat[ ,y], na.rm = TRUE)
-    local.exotics[local.exotics$community == y,
-                  'NND.Local'] <- min(Loc.Mat[ ,y], na.rm = TRUE)
-    local.exotics[local.exotics$community == y,
-                  'Focal'] <- exotics[exotics$Species == y, 'Focal']
-  }
-  
-  All.Local.exotics <- rbind(All.Local.exotics, local.exotics)
   
   # Abundance weighted data
   AWDat <- rarefy_FPD(x, 
@@ -184,382 +158,218 @@ for(x in unique(demo.data$Species)) {
 demo.data$logAWMPD <- log(demo.data$AWMPD)
 demo.data$logAWNND <- log(demo.data$AWNND)
 
-# local ESCR regressions-------------
-# mpdLM <- lm(ESCR ~ MPD + CRBM, data = demo.data)
-# nndLM <- lm(ESCR ~ NND + CRBM, data = demo.data)
-# logAWmpdLM <- lm(ESCR ~ logAWMPD + CRBM, data = demo.data)
-# logAWnndLM <- lm(ESCR ~ logAWNND + CRBM, data = demo.data)
-# RegMPDLM <- lm(ESCR ~ Regional_MPD + CRBM, data = demo.data)
-# RegNNDLM <- lm(ESCR ~ Regional_NND + CRBM, data = demo.data)
+genera <- vapply(demo.data$Species,
+                 function(x) strsplit(x, "_")[[1]][1],
+                 character(1L))
 
-# Use raw effect sizes + variances as suggested by reviewer 1
+paths <- paste('../Data/bootstrap_lambdas/', genera,'_lambdas.rds', sep = "")
 
-demo.data$use_var <- demo.data$var_escr / sum(demo.data$var_escr)
+all_lams <- lapply(paths, function(x) readRDS(x))
+names(all_lams) <- genera
 
-mpdLM <- lm(ESCR ~ MPD + CRBM, 
-            data = demo.data,
-            weights = 1/use_var)
+# First regression, then initialize output data
 
-nndLM <- lm(ESCR ~ NND + CRBM, 
-            data = demo.data,
-            weights = 1 / use_var)
-
-logAWmpdLM <- lm(ESCR ~ logAWMPD + CRBM, 
-                 data = demo.data,
-                 weights = 1 / use_var)
-
-logAWnndLM <- lm(ESCR ~ logAWNND + CRBM, 
-                 data = demo.data,
-                 weights = 1 / use_var)
-
-RegMPDLM <- lm(ESCR ~ Regional_MPD + CRBM, 
-               data = demo.data,
-               weights = 1 / use_var)
-
-RegNNDLM <- lm(ESCR ~ Regional_NND + CRBM, 
-               data = demo.data,
-               weights = 1 / use_var)
-
-
-message('standardized biomass')
-summary(mpdLM)
-summary(nndLM)
-summary(logAWmpdLM)
-summary(logAWnndLM)
-summary(RegMPDLM)
-summary(RegNNDLM)
-
-# prepare model outputs for table format
-mpdCT <- summary(mpdLM)$coefficients %>% data.frame() 
-nndCT <- summary(nndLM)$coefficients %>% data.frame()
-logAWmpdCT <- summary(logAWmpdLM)$coefficients %>% data.frame()
-logAWnndCT <- summary(logAWnndLM)$coefficients %>% data.frame()
-regMPDCT <- summary(RegMPDLM)$coefficients %>% data.frame()
-regNNDCT <- summary(RegNNDLM)$coefficients %>% data.frame()
-
-# more table formatting
-modelTable <- rbind(mpdCT, nndCT,
-                    logAWmpdCT, logAWnndCT,
-                    regMPDCT, regNNDCT)
-Parameter <- rownames(modelTable)
-Scale <- c(rep(c("Local", NA, NA), 4),
-           rep(c('Regional', NA, NA), 2))
-Type <- rep(c("Linear", NA, NA), 6)
-ResponseVariable <- rep(c('Log-Response Ratio', NA, NA), 6)
-R2adj <- c(summary(mpdLM)$adj.r.squared, NA, NA,
-           summary(nndLM)$adj.r.squared, NA, NA,
-           summary(logAWmpdLM)$adj.r.squared, NA, NA,
-           summary(logAWnndLM)$adj.r.squared, NA, NA,
-           summary(RegMPDLM)$adj.r.squared, NA, NA,
-           summary(RegNNDLM)$adj.r.squared, NA, NA)
-
-# combine all data, clean up parameter column
-names(modelTable)[2:4] <- c('Std.Error', 'Test.Statistic', 'p.value')
-modelTable <- cbind(Scale, Type, ResponseVariable, Parameter,
-                    modelTable, R2adj,
-                    stringsAsFactors = F)
-
-
-modelTable$Parameter <- str_replace_all(modelTable$Parameter,
-                                        '[:punct:]|[:digit:]', "")
-
-modelTable[ ,5:9] <- round(modelTable[ ,5:9], 4)
-
-add_stars <- function(x) {
+escr_reg <- function(demo_data, novelty_data, iteration) {
   
-  if(is.na(x)) return(NA_character_)
+  escr <- lapply(demo_data, 
+                 function(x, it) {
+                   log(x$lambda_cr[it] + 0.5) - log(x$lambda_c[it] + 0.5)
+                 },
+                 it = iteration) %>%
+    unlist()
   
-  if(x < .001){
-    x <- paste0(x, "***")
-  } else if(x < .01 & x > .001){
-    x <- paste0(x, "**")
-  } else if(x < .05 & x > .01){
-    x <- paste0(x, '*')
-  } else if(x < .1){
-    x <- paste0(x, '+')
-  } else {
-    x <- paste(x)
-  }
+  reg_data <- cbind(escr, novelty_data)
+  
+  model_mpd    <- lm(escr ~ MPD + CRBM, data = reg_data)
+  model_nnd    <- lm(escr ~ NND + CRBM, data = reg_data)
+  model_awmpd  <- lm(escr ~ logAWMPD + CRBM, data = reg_data)
+  model_awnnd  <- lm(escr ~ logAWNND + CRBM, data = reg_data)
+  model_re_mpd <- lm(escr ~ Regional_MPD + CRBM, data = reg_data)
+  model_re_nnd <- lm(escr ~ Regional_NND + CRBM, data = reg_data)
+  
+  betas_mpd    <- c(coef(model_mpd), summary(model_mpd)$adj.r.squared)
+  betas_nnd    <- c(coef(model_nnd), summary(model_nnd)$adj.r.squared)
+  betas_awmpd  <- c(coef(model_awmpd), summary(model_awmpd)$adj.r.squared)
+  betas_awnnd  <- c(coef(model_awnnd), summary(model_awnnd)$adj.r.squared)
+  betas_re_mpd <- c(coef(model_re_mpd), summary(model_re_mpd)$adj.r.squared)
+  betas_re_nnd <- c(coef(model_re_nnd), summary(model_re_nnd)$adj.r.squared)
+  
+  out <- list(mpd = betas_mpd,
+              nnd = betas_nnd,
+              awmpd = betas_awmpd,
+              awnnd = betas_awnnd,
+              reg_mpd = betas_re_mpd,
+              reg_nnd = betas_re_nnd)
+  
+  return(out)
+  
 }
 
-# add significance levels
-modelTable$p.value <- lapply(modelTable$p.value,
-                             FUN = function (x) add_stars(x)) %>% unlist()
+nov_data <- demo.data %>%
+  select(Species, CRBM, MPD:logAWNND)
+
+output <- list(
+  mpd = data.frame(int = numeric(1001L),
+                   nov = numeric(1001L),
+                   bio = numeric(1001L),
+                   r2  = numeric(1001L),
+                   met = "Small Grain MPD",
+                   stringsAsFactors = FALSE),
+  nnd = data.frame(int = numeric(1001L),
+                   nov = numeric(1001L),
+                   bio = numeric(1001L),
+                   r2  = numeric(1001L),
+                   met = "Small Grain NND",
+                   stringsAsFactors = FALSE),
+  awmpd = data.frame(int = numeric(1001L),
+                     nov = numeric(1001L),
+                     bio = numeric(1001L),
+                     r2  = numeric(1001L),
+                     met = "Small Grain AW-MPD",
+                     stringsAsFactors = FALSE),
+  awnnd = data.frame(int = numeric(1001L),
+                     nov = numeric(1001L),
+                     bio = numeric(1001L),
+                     r2  = numeric(1001L),
+                     met = "Small Grain AW-NND",
+                     stringsAsFactors = FALSE),
+  reg_mpd = data.frame(int = numeric(1001L),
+                       nov = numeric(1001L),
+                       bio = numeric(1001L),
+                       r2  = numeric(1001L),
+                       met = "Large Grain MPD",
+                       stringsAsFactors = FALSE),
+  reg_nnd = data.frame(int = numeric(1001L),
+                       nov = numeric(1001L),
+                       bio = numeric(1001L),
+                       r2  = numeric(1001L),
+                       met = "Large Grain NND",
+                       stringsAsFactors = FALSE)
+)
+
+for(i in 1:1001) {
+  
+  temp_betas <- escr_reg(all_lams, nov_data, i)
+  
+  output$mpd[i, 1:4] <- temp_betas$mpd
+  output$nnd[i, 1:4] <- temp_betas$nnd
+  output$awmpd[i, 1:4] <- temp_betas$awmpd
+  output$awnnd[i, 1:4] <- temp_betas$awnnd
+  output$reg_mpd[i, 1:4] <- temp_betas$reg_mpd
+  output$reg_nnd[i, 1:4] <- temp_betas$reg_nnd
+  
+}
+
+for_plot <- do.call("rbind", output)
+
+reg_fig_data <- lapply(output,
+                       function(x) { 
+                         
+                         obs <- t(x[1, 1:4]) %>%
+                           as.data.frame()
+                         sorting <- x[2:1001, 1:3]
+                         to_bind <- sorting[order(sorting$nov), ]
+                         to_bind <- t(to_bind[c(25, 975), 1:3])
+                         
+                         sorting_r2 <- x[2:1001, 4]
+                         r2_bind <- sorting_r2[order(sorting_r2)]
+                         r2_bind <- t(r2_bind[c(25, 975)])
+                         
+                         to_bind <- rbind(to_bind, r2_bind)
+                         
+                         out <- data.frame(to_bind) %>%
+                           cbind(obs, .) %>%
+                           setNames(
+                             c("Value", "Lo_CI", "Up_CI")
+                           ) %>%
+                           mutate(Coefficient = factor(c("Intercept",
+                                                         "Distinctiveness",
+                                                         "Biomass",
+                                                         "paste(R[adj]^2)"),
+                                                       levels = c("Intercept",
+                                                                  "Distinctiveness",
+                                                                  "Biomass",
+                                                                  "paste(R[adj]^2)"),
+                                                       ordered = TRUE))
+                         
+                         return(out)
+                         
+                       }) %>%
+  do.call("rbind", args = .) %>%
+  mutate(Metric = c(
+    rep("Small Grain MPD", 4),
+    rep("Small Grain NND", 4),
+    rep("Small Grain AW-MPD", 4),
+    rep("Small Grain AW-NND", 4),
+    rep("Large Grain MPD", 4),
+    rep("Large Grain NND", 4)
+  )) %>%
+  filter(! Coefficient %in% c("Intercept", "Biomass"))
+
+for_plot$Metric <- factor(for_plot$met,
+                          levels = c(
+                            "Small Grain NND",
+                            "Small Grain MPD",
+                            "Small Grain AW-NND",
+                            "Small Grain AW-MPD",
+                            "Large Grain NND",
+                            "Large Grain MPD"
+                          ),
+                          ordered = TRUE)
+
+r2s   <- filter(reg_fig_data, Coefficient != "Distinctiveness")
+
+beta_hists <- ggplot(for_plot, aes(x = nov)) +
+  geom_histogram(bins = 75) +
+  facet_wrap(~Metric,
+             scales = "free_x",
+             nrow = 3,
+             ncol = 2) + 
+  theme_bw() +
+  geom_vline(xintercept = 0, color = 'red', size = 1.5, linetype = 'dashed')  + 
+  labs(x = "Coefficient Value",
+       y = "Count") + 
+  theme(strip.text = element_text(size = 14),
+        strip.background = element_blank(),
+        axis.text.y = element_text(size = 13),
+        axis.text.x = element_text(size = 13))
+
+r2_plot <- ggplot(r2s, aes(x = Metric, y = Value)) +
+  geom_point(size = 3) +
+  geom_linerange(aes(ymin = Lo_CI, ymax = Up_CI), size = 1.25) +
+  theme_bw() +
+  scale_y_continuous(limits = c(-0.05, 1.05)) +
+  coord_flip() +
+  labs(x = "",
+       y = expression(paste(R[adj]^2))) +
+  theme(axis.text.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.text.y = element_text(size = 13))
+
+png(filename = "../Eco_Letters_Manuscript/Figures/Figure_2_hist_plus_barplot.png",
+    height = 8.5,
+    width = 12.5,
+    units = 'in',
+    res = 600)
+
+  grid.arrange(beta_hists, r2_plot, nrow = 1, ncol = 2)
+
+dev.off()
+
+pdf(file = "../Eco_Letters_Manuscript/Figures/Figure_2.pdf",
+    height = 8.5,
+    width = 13.5)
+
+  grid.arrange(beta_hists, r2_plot, nrow = 1, ncol = 2)
+  
+dev.off()
 
 #  write table to csv so we can include in paper
-write.csv(modelTable, '../Eco_Letters_Manuscript/Figures/Phylo_models_output.csv', 
+
+write.csv(reg_fig_data, 
+          file = '../Eco_Letters_Manuscript/Figures/Phylo_models_output.csv', 
           na = "",
           row.names = FALSE)
-
-
-# Figure 1 plots. THese are assembled on a single canvas using cowplot to add 
-# annotations
-
-bad.mets <- c('AWNND','AWMPD')
-forPlot <- gather(demo.data, Metric, Magnitude, MPD:logAWNND) %>% 
-  filter(!Metric %in% bad.mets )
-forPlot$MEPPInv <- ifelse(forPlot$MEPPInv == 1, 'Y', 'N')
-
-# generate predictions from each significant model so we can plot them as
-# trendlines. Tragically, the stat_smooth model formula interface won't work with
-# additional covariates (or, rather, I can't figure out a way to make it work.
-# It may actually be possible).
-
-x <- seq(min(demo.data$MPD), max(demo.data$MPD), length.out = 14)
-y <- seq(min(demo.data$CRBM), max(demo.data$CRBM), length.out = 14)
-MPD.Preds <- predict(mpdLM, data.frame(MPD = x,
-                                       CRBM = y),
-                     type = 'response',
-                     interval = 'confidence',
-                     se.fit = TRUE)$fit %>%
-  data.frame %>% 
-  cbind(., x)
-
-x <- seq(min(demo.data$NND), max(demo.data$NND), length.out = 14)
-NND.Preds <- predict(nndLM, data.frame(NND = x,
-                                       CRBM = y),
-                     type = 'response',
-                     interval = 'confidence',
-                     se.fit = TRUE)$fit %>%
-  data.frame %>% 
-  cbind(., x)
-
-x <- seq(min(demo.data$logAWMPD), max(demo.data$logAWMPD), length.out = 14)
-AWMPD.Pred <- predict(logAWmpdLM, data.frame(logAWMPD = x,
-                                             CRBM = y),
-                      type = 'response',
-                      interval = 'confidence',
-                      se.fit = TRUE)$fit %>%
-  data.frame %>% 
-  cbind(., x)
-
-x <- seq(min(demo.data$logAWNND), max(demo.data$logAWNND), length.out = 14)
-AWNND.Pred <- predict(logAWnndLM, data.frame(logAWNND = x,
-                                             CRBM = y),
-                      type = 'response',
-                      interval = 'confidence',
-                      se.fit = TRUE)$fit %>%
-  data.frame %>% 
-  cbind(., x)
-
-plt.blank <- theme(panel.grid.major = element_blank(),
-                   panel.grid.minor = element_blank(),
-                   panel.background = element_rect(fill = NA,
-                                                   size = 1.25,
-                                                   color = 'black'),
-                   axis.title = element_text(size = 18),
-                   axis.line = element_line(size = 1.3),
-                   axis.text = element_text(size = 16))
-
-loc.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'MPD'),
-                          aes(x = Magnitude,
-                              y = ESCR)) +
-  scale_x_continuous('MPD', 
-                     breaks = seq(10,
-                                  16,
-                                  1.5),
-                     limits = c(9.9, 16.1)) +
-  scale_y_continuous('',
-                     breaks = seq(0, 3.5, 1),
-                     limits = c(-.5, 3.5)) +
-  geom_point(alpha = .4, 
-             aes(color = MEPPInv),
-             size = 4) + 
-  scale_color_manual(
-    name = 'Status',
-    labels = c("Non-invasive", "Invasive"),
-    values = c('red','blue')
-  ) +
-  geom_hline(yintercept = 0, linetype = 'dotted',
-             alpha = 0.5,
-             size = 2) +
-  geom_line(data = MPD.Preds, 
-            aes(x = x, 
-                y = fit),
-            color = 'black',
-            alpha = .8,
-            size = .8)  + 
-  plt.blank
-
-loc.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'NND'),
-                          aes(x = Magnitude, y = ESCR)) +
-  geom_point(aes(color = MEPPInv),
-             alpha = .4,
-             show.legend = FALSE,
-             size = 4) +
-  scale_x_continuous('NND', 
-                     breaks = seq(0,
-                                  16,
-                                  4),
-                     limits = c(0, 16)) +
-  scale_y_continuous('',
-                     breaks = seq(0, 3.5, 1),
-                     limits = c(-0.5, 3.5)) +
-  scale_color_manual(values = c('red','blue')) +
-  geom_hline(yintercept = 0, linetype = 'dotted',
-             alpha = 0.5,
-             size = 2) +
-  geom_line(data = NND.Preds, 
-            aes(x = x, 
-                y = fit),
-            color = 'black',
-            alpha = .8,
-            size = .8) +
-  plt.blank
-
-
-loc.lrr.aw.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWMPD'),
-                             aes(x = Magnitude, y = ESCR)) +
-  geom_point(aes(color = MEPPInv),
-             alpha = .4,
-             show.legend = FALSE,
-             size = 4) +
-  scale_x_continuous('log(abundance-weighted MPD)', 
-                     breaks = seq(2.2,
-                                  2.9,
-                                  0.15),
-                     limits = c(2.2, 2.9)) +
-  scale_y_continuous('',
-                     breaks = seq(0, 3.5, 1),
-                     limits = c(-.5, 3.5)) +
-  scale_color_manual(values = c('red','blue')) +
-  geom_hline(yintercept = 0, linetype = 'dotted',
-             alpha = 0.5,
-             size = 2) +
-  geom_line(data = AWMPD.Pred, 
-            aes(x = x, 
-                y = fit),
-            color = 'black',
-            alpha = .8,
-            size = .8) + 
-  plt.blank
-
-
-loc.lrr.aw.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'logAWNND'),
-                             aes(x = Magnitude, y = ESCR)) +
-  geom_point(aes(color = MEPPInv),
-             alpha = .4,
-             show.legend = FALSE,
-             size = 4) +
-  scale_x_continuous('log(abundance-weighted NND)', 
-                     breaks = seq(-5,
-                                  -0.5,
-                                  0.75),
-                     limits = c(-5, -0.5)) +
-  scale_y_continuous('',
-                     breaks = seq(0, 3.5, 1),
-                     limits = c(-0.75, 3.5)) +
-  scale_color_manual(values = c('red','blue')) +
-  geom_hline(yintercept = 0, linetype = 'dotted',
-             alpha = 0.5,
-             size = 2) +
-  geom_line(data = AWNND.Pred, 
-            aes(x = x, 
-                y = fit),
-            color = 'black',
-            alpha = .8,
-            size = .8) + 
-  plt.blank
-
-
-reg.lrr.mpd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_MPD'),
-                          aes(x = Magnitude, y = ESCR)) +
-  geom_point(aes(color = MEPPInv),
-             alpha = .4,
-             show.legend = FALSE,
-             size = 4) +
-  scale_x_continuous('MPD', 
-                     breaks = seq(13.5,
-                                  15.6,
-                                  0.7),
-                     limits = c(13.4, 15.7)) +
-  scale_y_continuous('',
-                     breaks = seq(0, 3.5, 1),
-                     limits = c(-.5, 3.5)) +
-  scale_color_manual(values = c('red','blue')) +
-  geom_hline(yintercept = 0, linetype = 'dotted',
-             alpha = 0.5,
-             size = 2) + 
-  plt.blank
-
-
-reg.lrr.nnd.plt <- ggplot(data = filter(forPlot, Metric == 'Regional_NND'),
-                          aes(x = Magnitude, y = ESCR)) +
-  geom_point(aes(color = MEPPInv),
-             alpha = .4,
-             show.legend = FALSE,
-             size = 4) +
-  scale_x_continuous('NND', 
-                     breaks = seq(1,
-                                  11,
-                                  2),
-                     limits = c(1, 11)) +
-  scale_y_continuous('',
-                     breaks = seq(0, 3.5, 1),
-                     limits = c(-.5, 3.5)) +
-  scale_color_manual(values = c('red','blue')) +
-  geom_hline(yintercept = 0, 
-             linetype = 'dotted',
-             alpha = 0.5,
-             size = 2) +
-  plt.blank
-
-# Draw the plots and add axis labels where needed
-
-ggdraw() +
-  draw_plot(loc.lrr.mpd.plt + 
-              theme(legend.position = 'top',
-                    legend.direction = 'horizontal'),
-            x = .1, y = .67,
-            width = .45, height = .33) + 
-  draw_plot(loc.lrr.nnd.plt, x = .55, y = .67,
-            width = .45, height = .33) +
-  draw_plot(loc.lrr.aw.mpd.plt, x = .1, y = .34,
-            width = .45, height = .33) +
-  draw_plot(loc.lrr.aw.nnd.plt, x = .55, y = .34,
-            width = .45, height = .33) +
-  draw_plot(reg.lrr.mpd.plt, x = .1, y = 0,
-            width = .45, height = .33) +
-  draw_plot(reg.lrr.nnd.plt, x = .55, y = 0,
-            width = .45, height = .33) +
-  annotate('text', x = .03, y = .55,
-           label = 'Effect size of competition', size = 6,
-           angle = 90) +
-  annotate('text', x = .52, y = .95,
-           label = 'A', size = 5.5) +
-  annotate('text', x = .97, y = .97,
-           label = 'B', size = 5) +
-  annotate('text', x = .52, y = .65, 
-           label = 'C', size = 5) +
-  annotate('text', x = .97, y = .65, 
-           label = 'D', size = 5) +
-  annotate('text', x = .52, y = .3, 
-           label = 'E', size = 5) +
-  annotate('text', x = .97, y = .3,
-           label = 'F', size = 5) +
-  annotate('text', x = .10, y = .785, 
-           label = 'Local',
-           size = 5) +
-  annotate('text', x = .10, y = .46, 
-           label = 'Local',
-           size = 5) + 
-  annotate('text', x = .09, y = .115, 
-           label = 'Regional',
-           size = 5)
-
-ggsave(filename = 'LRR_Regressions_Phylo_Only_For_Manuscript.png',
-       path = '../Eco_Letters_Manuscript/Figures',
-       height = 8.5,
-       width = 12.5,
-       units = 'in',
-       dpi = 600)
-
-ggsave(filename = "Figure_2.pdf",
-       path = '../Eco_Letters_Manuscript/Figures',
-       height = 8.5,
-       width = 12.5,
-       units = 'in',
-       dpi = 600)
 
 # functional phylogenetic regressions-------------
 # next, determine best models using latest version of invasives FPD
@@ -573,19 +383,27 @@ ggsave(filename = "Figure_2.pdf",
 
 demo.data <- arrange(demo.data, desc(ESCR))
 
+# Remove monocots for this part because we have no functional
+# trait information for them
+
+monocots <- tyson$spp.list %>%
+  filter(Monocot == 1)
+
+communities <- filter(communities, ! community %in% monocots$Species)
+
 traits <- c('Height', 'SLA', 'Tough', 'Flower.Period')
 trait.data <- tyson$traits
 
 a_seq <- seq(0, 1, .025)
 R2dat <- data.frame(A = a_seq,
-                    NND = rep(NA, length(a_seq)),
-                    MPD = rep(NA, length(a_seq)))
+                    NND = rep(NA_real_, length(a_seq)),
+                    MPD = rep(NA_real_, length(a_seq)))
 mod.data <- demo.data
 
-mod.data[ , paste0('nna_', a_seq)] <- NA
-mod.data[ , paste0('mpa_', a_seq)] <- NA  
+mod.data[ , paste0('nna_', a_seq)] <- NA_real_
+mod.data[ , paste0('mpa_', a_seq)] <- NA_real_
 
-for(x in unique(demo.data$Species)){
+for(x in unique(demo.data$Species)) {
   cat('Calculating FPD for species: ', x, '\n')
   
   
@@ -731,14 +549,11 @@ ggsave(filename = "Figure_3.pdf",
 
 ## Conceptual figure - Figure 1!
 detach('package:cowplot', unload = TRUE)
-
 lrr_concept_data <- data.frame(
   Treatment   = c("Control", "Competitor Removal"),
-  Significant = c(rep("paste('Within-species ', lambda, ' values\nnot significantly different')", 2),
-                  rep("paste('Within-species ', lambda, ' values\nsignificantly different')",2)),
-  lambda      = c(1.1, 1.2, 1.1, 1.6), 
-  UpCI        = c(1.3, 1.5, 1.3, 1.9),
-  LoCI        = c(0.92, 1.1, 0.92, 1.4)
+  lambda      = c(1.1, 1.6), 
+  UpCI        = c(1.3, 1.9),
+  LoCI        = c(0.92, 1.4)
 )
 
 lrr_panel <- ggplot(lrr_concept_data, 
@@ -754,7 +569,6 @@ lrr_panel <- ggplot(lrr_concept_data,
              alpha = 0.5,
              linetype = 'dotted',
              size = 2) +
-  facet_wrap(~Significant) + 
   scale_y_continuous(expression(lambda)) +
   scale_color_manual(values = viridis::viridis(2, 
                                                begin = 0.3,
